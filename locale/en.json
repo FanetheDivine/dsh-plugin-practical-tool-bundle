@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "DSH practical tool bundle",
-    "description": "Six tools you can turn on one by one: sweep sessions, retry on reasoning errors, project Claude skills, a restart button, larger touch targets on phones, and official feature switches."
+    "description": "Seven tools you can turn on one by one: sweep sessions, retry on reasoning errors, project Claude skills, a restart button, larger touch targets on phones, official feature switches, and Lark-based task dispatch with two-way messaging, notes, and task archives. dsh-plugin-meta-tools is included; install dsh-plugin-lark-bridge separately and configure its dispatch workspace and SA-调度会话 preset."
   }
 }

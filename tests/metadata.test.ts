@@ -93,6 +93,9 @@ const ROW_SUBPATHS = [
   'restart',
   'mobile',
   'official-features',
+  'lark-super-agent',
+  'sa-dispatch',
+  'sa-worker',
 ];
 
 /** 宿主接受的图标大小上限。 */

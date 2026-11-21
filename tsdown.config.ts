@@ -19,7 +19,7 @@ const CLIENT_ID = 'dsh-plugin-practical-tool-bundle';
 
 /**
  * 两组构建：
- * 1) 七个宿主入口 → dist/<name>.mjs。宿主依赖保持 external，
+ * 1) 十个宿主入口 → dist/<name>.mjs。宿主依赖保持 external，
  *    `yaml` 打进使用它的入口；类型声明由 tsc -p tsconfig.build.json 生成。
  * 2) 浏览器入口 → dist/client.js。调用
  *    window.__ModuleLoader__.load({ id, factory }) 注册插件，
@@ -36,6 +36,9 @@ export default defineConfig([
       restart: 'src/restart/index.ts',
       mobile: 'src/mobile/index.ts',
       'official-features': 'src/official-features/index.ts',
+      'lark-super-agent': 'src/lark-super-agent/index.ts',
+      'sa-dispatch': 'src/sa-dispatch/index.ts',
+      'sa-worker': 'src/sa-worker/index.ts',
     },
     outDir: 'dist',
     format: ['esm'],
