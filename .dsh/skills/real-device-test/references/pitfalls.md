@@ -6,6 +6,7 @@
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
+| `setup-env.sh` 报「无法确定宿主版本」 | 未设 `RDT_DSH_VERSION`，`package.json` 没有 `@deepseek-ai/dsh-agent`，`dsh` 也不在 PATH | 设置 `RDT_DSH_VERSION`，或安装 `dsh`，或在 `package.json` 声明该依赖 |
 | 本地宿主启动报 `user patch-layer watching requires the Cordis HMR service` | 旧版宿主的依赖按 caret 范围解析到之后发布的不兼容版本 | `setup-env.sh` 用 `npm i --before=<宿主发布时间>` 安装。手动安装时同样加这个参数 |
 | 驱动报 `readEnv`、`reading 'session'` 等 TypeError | 加载了全局宿主而非本地宿主 | 先执行 `setup-env.sh` 打印的 `export PATH=... RDT_DSH_PKG=...` |
 | 启动报 `.credentials.yaml must be a string` | 旧版宿主读取了新版宿主写的凭据文件 | 隔离配置把 `credentials.path` 指向 profile 目录 |
@@ -18,16 +19,24 @@
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
-| mock 识别不到用户消息里的标记 | 宿主在用户消息后追加一条运行时上下文消息 | 读取最后一条 assistant 之后的全部用户消息 |
-| mock 识别不到工具结果 | 旧版宿主把工具结果放进 `user` 消息的 `tool-result` 块 | 按消息内的 `tool-result` 块判断，忽略角色 |
-| `agent.session.snapshotEvents is not a function` | 旧版宿主只有 `session.events` 属性 | 驱动同时兼容 `snapshotEvents()` 与 `events` |
-| mock 把工具结果当普通消息，回复「mock：已收到」 | 宿主把工具结果放进 `role: 'tool'` 的消息，内容仍是 text 块 | 判断 `last.role === 'tool'`，再回退到 `tool-result` 块 |
-| 修改 mock 后 GUI 行为不变 | GUI 进程持有已加载的模块 | 重新运行 `gui-up.sh` 再刷新页面 |
-| `fiber.assertActive()` 在 `apply` 抛错时仍通过 | 它只检查插件是否已卸载 | 用 `entry.fiber.state` 判断：`2` 已激活，`3` 加载失败 |
+| loader 中按行 id 找不到条目 | bundle 行带组路径前缀，例如 `include:session-sweeper` | 先按完整 id 查，再按 `:${行 id}` 后缀匹配 |
+| `entry.fiber.state` 判断失效 | `FiberState` 是 `const enum`，运行时没有值 | 按序号：`2` 已激活，`3` 加载失败 |
+| 状态路由五行都是 `null` | 宿主 loader 服务不可用 | 确认 `ctx.get('loader')`；前端对 `null` 保持当前界面 |
+| 状态路由某行为 `false` | 该行被停用，或 fiber 未进入 ACTIVE | 查 profile 的 `cordis.patch.yml` 与行入口的 `apply` |
 | 工作区报 `missing or foreign unit header`，会话控制器等服务一直等待 | `workspace.json` 的 `version` 写在了顶层 | 写成 `unit: { name: 'workspace', version: 2 }` |
 | GUI 停在「正在加载工作区」 | `workspace.json` 的路径或时间戳格式错误 | `path` 用反斜杠 Windows 路径，时间戳用 ISO 字符串 |
-| 多次运行报 `SessionAlreadyExistsError` | 固定 sessionId 与上轮落盘会话冲突 | `run-test.mjs` 启动时清理 `test-sessions` |
 | 驱动找不到 `lib/profile-boot.js` | 旧版宿主只提供带 hash 的文件名 | `run-test.mjs` 按导出的 `runProfile` 查找 |
+
+## 路由与认证
+
+| 现象 | 原因 | 处理 |
+| --- | --- | --- |
+| Node 直接请求 `/api/dsh-practical-tools/*` 返回 401 | 路由位于宿主的 `/api` 认证围栏内 | 在已登录页面内 `fetch`，或使用 `RDT_GUI_URL` 打开页面 |
+| 页面内 `fetch('/api/...')` 返回 401 | 页面未从 `gui-up.sh` 导出的带 token 地址打开 | 用 `RDT_GUI_URL` 打开，不要手输端口 |
+| 清理路由返回 503 | Workspace registry 尚未就绪 | 等 GUI 完成加载再执行 B2 |
+| 清理路由删除范围超出预期 | 清理会归档未置顶会话并永久删除全部已归档日志 | 只在一次性 profile 中执行；不要指向真实 profile |
+| `mobile.css` 返回 500 或带 `unavailable` 注释 | `assets/mobile.css` 未随包发布 | 检查 `package.json` 的 `files` 与构建产物 |
+| `restart/info` 缺少 `runtime` | 宿主版本早于运行形态字段 | 按 `web` 处理，或先升级本地宿主 |
 
 ## 热更新
 
@@ -42,24 +51,25 @@
 
 ## 浏览器
 
-`browser-test.mjs` 用 Playwright 驱动无头 Chrome。界面标签随宿主语言变化，脚本按中英文两套标签依次尝试。定位依据：
+`browser-test.mjs` 用 Playwright 驱动无头 Chrome。定位依据：
 
 | 元素 | 定位方式 |
 | --- | --- |
-| 输入框 | `textarea` 或 `[contenteditable="true"]` 的第一个 |
-| 发送按钮 | `getByRole('button', { name: '发送消息' })` |
-| 本轮折叠行 | 文本匹配 `已完成` |
-| 工具分组 | `getByRole('button', { name: '已调用工具' })` |
-| 插件启用开关 | `getByRole('switch', { name: '启用 <插件名>' })`，状态读 `aria-checked` |
+| 清理会话按钮 | `button[aria-label="清理会话"]` |
+| 重启按钮 | `button[aria-label="重启 DSH"]` |
+| 手机样式标记 | `document.documentElement` 的 `data-dsh-mobile-css`，取值为 `link`、`style` 或 `failed` |
+| 手机样式规则 | `document.styleSheets` 中的 `min-height: 44px` 与 `328px` |
+| 悬停底色 | `getComputedStyle(button).backgroundColor` 的 alpha |
+| 控制台异常 | `page.on('console')` 的 error 与 `page.on('pageerror')` |
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
 | 打开 GUI 先出现「预览版说明」或「内测声明」弹窗 | 欢迎弹窗只在配置的版本号与宿主常量完全一致时隐藏 | `setup-env.sh` 从宿主读取该常量写入配置；`browser-test.mjs` 会自动点「继续」 |
-| 工具卡片看不到 `demo_echo` | 工具调用折叠在「已完成，用时 N」与「已调用工具」两层展开项里 | 脚本先展开这两层再断言 |
-| 插件页没有插件详情入口 | 部分宿主版本只提供行内启用开关与提示气泡 | 断言「已安装插件」列出插件、开关为开 |
-| 插件页按包名找不到插件 | 插件页显示元数据里的标题，不显示包名 | 卡片用 `data-plugin-package="<包名>"` 定位；按钮标签按语言从 `locale/<语言>.json` 的 `meta.title` 拼出，缺失时回落包名 |
-| 保存配置后 `cordis.patch.yml` 未更新 | 宿主异步写盘，2 秒内可能未落盘 | 轮询读取补丁文件，最多 15 秒 |
-| 旧版宿主没有插件页 | 插件管理在「设置」中 | 跳过 C2 用例 |
+| 找不到两个侧栏按钮 | 状态路由未回答 `true`，界面块尚未挂载 | 等一个 3 秒轮询周期；检查 A3；确认行 fiber 已激活 |
+| 按钮存在但标签不是中文 | 宿主 locale 为英文，`aria-label` 取自英文字典 | 让 profile 使用中文 locale，或按 `locale/<语言>.json` 调整选择器 |
+| 手机标记为 `failed` | 手机样式路由不可用，或远程页面取样式失败 | 检查 B4 与 `mobile-touch-ui` 行状态 |
+| 手机断点下 44px 断言失败 | 宿主侧栏类名改版，锚点未命中 | 对照宿主 DOM 更新 `assets/mobile.css` 的 `[class*="…"]` 锚点 |
+| 悬停 alpha 不是 0.12 | 按钮改用了别的悬停底色 | 对照 `src/client/sweeper.tsx` 与 `src/client/restart.tsx` 的 `triggerStyle` |
 | GUI 每次启动 token 不同 | token 每次轮换 | 用 `gui-up.sh` 导出的 `RDT_GUI_URL` |
 | 旧版宿主日志里没有 token | 旧版默认不启用访问令牌 | `gui-up.sh` 直接使用日志中的地址 |
 | 打开页面返回 401 | 未带 token 访问 | 使用 `RDT_GUI_URL` 的完整地址 |

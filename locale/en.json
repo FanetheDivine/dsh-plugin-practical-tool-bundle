@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Plugin template",
-    "description": "Demonstrates DSH plugin host tools and front-end wiring: a demo_echo tool, agent event logs, a configuration page in the Plugins panel, and a demo row above the composer."
+    "title": "DSH Practical Tool Bundle",
+    "description": "Five rows in one package: sweep sessions from the sidebar (archive unpinned sessions, then delete archived logs), reset reasoning (drop rejected reasoning blocks and retry), Claude skills (read-only project .claude/skills), restart button (restart the service on the web, the app on the desktop), and phone touch enlargement (larger controls at 767px and below)."
   }
 }

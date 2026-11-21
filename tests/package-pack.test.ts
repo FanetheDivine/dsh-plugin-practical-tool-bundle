@@ -1,7 +1,5 @@
-// package.json 打包回归测试：npm pack --dry-run 断言 tarball 只含发布所需文件。
-// files 字段（package.json）决定分发内容：dist + cordis.patch.yml + locale/*.json + README.md；
-// src / tests / scripts 等开发文件不得进包。产物由 build 生成，过期时测试失败。
-// 报告解析见 tests/support/pack-report.ts：npm 11 输出数组，npm 12 输出以包名为键的对象。
+// 包内容回归测试：npm pack --dry-run 断言 tarball 只含发布所需文件。
+// 六个宿主入口、前端产物、assets、图标与 locale 必须进包；src / tests / scripts 不得进包。
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -13,6 +11,24 @@ import { packedFilePaths } from './support/pack-report.ts';
 
 /** 仓库根目录（tests/ 的上一级）。 */
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** 必须进包的固定文件。 */
+const REQUIRED = [
+  'dist/index.mjs',
+  'dist/sweeper.mjs',
+  'dist/reasoning-reset.mjs',
+  'dist/claude-skills.mjs',
+  'dist/restart.mjs',
+  'dist/mobile.mjs',
+  'dist/client.js',
+  'assets/launcher.cjs',
+  'assets/mobile.css',
+  'icon.svg',
+  'cordis.patch.yml',
+  'README.md',
+  'locale/en.json',
+  'locale/zh.json',
+];
 
 /** 打包结果的缓存：同一进程内只执行一次 npm pack。 */
 let cachedPaths: Set<string> | undefined;
@@ -38,15 +54,9 @@ function packedPaths(): Set<string> {
 }
 
 describe('npm 包内容（npm pack --dry-run）', () => {
-  it('tarball 含 dist/cordis.patch.yml/locale/README.md，不含 src/tests/scripts', () => {
+  it('tarball 含全部入口、assets、图标与元数据，不含 src/tests/scripts', () => {
     const packed = packedPaths();
-    expect(packed.has('dist/index.mjs')).toBe(true);
-    expect(packed.has('dist/index.d.ts')).toBe(true);
-    expect(packed.has('dist/client.js')).toBe(true);
-    expect(packed.has('cordis.patch.yml')).toBe(true);
-    expect(packed.has('README.md')).toBe(true);
-    expect(packed.has('locale/en.json')).toBe(true);
-    expect(packed.has('locale/zh.json')).toBe(true);
+    for (const file of REQUIRED) expect(packed.has(file)).toBe(true);
     expect([...packed].some((p) => p.startsWith('src/'))).toBe(false);
     expect([...packed].some((p) => p.startsWith('tests/'))).toBe(false);
     expect([...packed].some((p) => p.startsWith('scripts/'))).toBe(false);
@@ -57,7 +67,7 @@ describe('npm 包内容（npm pack --dry-run）', () => {
     packedPaths();
     const client = readFileSync(path.join(ROOT, 'dist', 'client.js'), 'utf8');
     expect(client).toContain('window.__ModuleLoader__.load(');
-    expect(client).toContain('id: "dsh-plugin-template"');
+    expect(client).toContain('id: "dsh-plugin-practical-tool-bundle"');
     expect(client).not.toContain('exports.inject');
     expect(client).toContain('exports.apply');
   });

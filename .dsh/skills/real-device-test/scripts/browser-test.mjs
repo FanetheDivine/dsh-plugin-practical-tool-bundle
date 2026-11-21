@@ -1,9 +1,10 @@
-// 实机测试浏览器驱动：用 Playwright 驱动无头 Chrome 打开 GUI，执行对话、插件页与配置页流程。
-// 用法：在 profile 目录运行 node browser-test.mjs；RDT_REPO 必填，RDT_GUI_URL 由 gui-up.sh 导出。
+// 实机测试浏览器驱动：用 Playwright 打开 GUI，校验状态路由、功能路由与侧栏界面。
+// 用法：在仓库内运行 node browser-test.mjs；RDT_GUI_URL 由 gui-up.sh 导出。
 // env：RDT_HEADLESS=0 显示浏览器；RDT_SHOTS 截图目录，默认 profile 目录下的 shots。
 // 结果写入 browser-results.json，全部通过时退出码为 0。
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -11,47 +12,12 @@ import { chromium } from 'playwright';
 const root = process.env.RDT_PROFILE_DIR ?? dirname(fileURLToPath(import.meta.url));
 const url = process.env.RDT_GUI_URL;
 if (!url) throw new Error('RDT_GUI_URL 必填：先 eval $(bash gui-up.sh <profile名>)');
-const REPO = process.env.RDT_REPO;
-if (!REPO) throw new Error('RDT_REPO 必填：插件仓库绝对路径');
-const PLUGIN = JSON.parse(readFileSync(join(REPO, 'package.json'), 'utf8')).name;
-/** 插件在界面上的显示名：宿主优先显示元数据标题，缺失时回落包名。 */
-const DISPLAY_NAMES = [
-  ...new Set([
-    ...['zh', 'en'].flatMap((lang) => {
-      try {
-        const meta = JSON.parse(readFileSync(join(REPO, 'locale', `${lang}.json`), 'utf8')).meta;
-        return typeof meta?.title === 'string' ? [meta.title] : [];
-      } catch {
-        return [];
-      }
-    }),
-    PLUGIN,
-  ]),
-];
-/** 为每个显示名拼出带前缀的按钮标签，如「查看 插件模板」。 */
-const withNames = (prefixes) =>
-  prefixes.flatMap((prefix) => DISPLAY_NAMES.map((name) => `${prefix} ${name}`));
 const shots = process.env.RDT_SHOTS ?? join(root, 'shots');
 mkdirSync(shots, { recursive: true });
 
 /** GUI 的中英文标签，按顺序尝试，取第一个存在的。 */
 const LABELS = {
   welcome: ['继续', 'Continue'],
-  workspace: ['选择工作区', 'Choose workspace'],
-  send: ['发送消息', 'Send message'],
-  newSession: ['新建会话', 'New session'],
-  plugins: ['插件', 'Plugins'],
-  installed: ['已安装插件', 'Installed plugins'],
-  view: ['查看', 'View'],
-  configure: ['配置', 'Configure'],
-  turn: /已完成|Completed/,
-  toolGroup: ['已调用工具', 'Called tools'],
-  save: ['保存', 'Save'],
-  prefixLabel: ['回显前缀', 'Echo prefix'],
-  invalidPrefix: [
-    '前缀需要至少一个非空白字符。',
-    'The prefix needs at least one non-blank character.',
-  ],
 };
 
 const results = [];
@@ -81,67 +47,6 @@ async function dismissWelcome(page) {
   return false;
 }
 
-/** 输入框。hero 与已打开的会话都只有一个可编辑元素。 */
-const composer = (page) => page.locator('textarea, [contenteditable="true"]').first();
-
-/** 按中英文标签依次尝试点击一个按钮。 */
-async function clickLabel(page, names, exact = true) {
-  for (const name of names) {
-    const btn = page.getByRole('button', { name, exact });
-    if (await btn.count()) {
-      await btn.first().click();
-      return true;
-    }
-  }
-  return false;
-}
-
-/** 打开插件页。 */
-async function openPluginsPage(page) {
-  if (!(await clickLabel(page, LABELS.plugins))) throw new Error('找不到插件页入口');
-  await page.waitForTimeout(1500);
-}
-
-/** 打开被测插件的行配置页：插件页 → 包详情 → 行配置。 */
-async function openRowConfig(page) {
-  await openPluginsPage(page);
-  const card = page.locator(`[data-plugin-package="${PLUGIN}"]`);
-  await card.waitFor({ state: 'visible', timeout: 60000 });
-  if (!(await clickLabel(page, withNames(LABELS.view)))) {
-    throw new Error(`找不到 ${PLUGIN} 的详情入口`);
-  }
-  if (!(await clickLabel(page, withNames(LABELS.configure)))) {
-    throw new Error(`找不到 ${PLUGIN} 行的配置入口`);
-  }
-  await page.locator('[data-plugin-config]').waitFor({ state: 'visible', timeout: 30000 });
-}
-
-/** 在配置页里按标签找控件：`switch` 与 `button` 按角色找，其余按关联标签找。 */
-async function configControl(page, names, role = 'label') {
-  for (const name of names) {
-    const control =
-      role === 'switch'
-        ? page.getByRole('switch', { name, exact: true })
-        : role === 'button'
-          ? page.getByRole('button', { name, exact: true })
-          : page.getByLabel(name, { exact: true });
-    if (await control.count()) return control.first();
-  }
-  throw new Error(`找不到控件：${names.join(' / ')}`);
-}
-
-/** 新建会话，发送带前缀标记的消息，等待工具回显。 */
-async function sendEcho(page, marker, timeout = 60000) {
-  if (!(await clickLabel(page, LABELS.newSession))) throw new Error('找不到新建会话入口');
-  await page.waitForTimeout(2000);
-  const box = composer(page);
-  await box.waitFor({ state: 'visible' });
-  await box.click();
-  await box.fill(`ECHO_CASE:${marker}`);
-  await clickLabel(page, LABELS.send, false);
-  await page.getByText(`mock：工具返回 [${marker}]`, { exact: false }).first().waitFor({ timeout });
-}
-
 const browser = await chromium.launch({
   channel: 'chrome',
   headless: process.env.RDT_HEADLESS !== '0',
@@ -150,6 +55,54 @@ const context = await browser.newContext({ viewport: { width: 1280, height: 1000
 const page = await context.newPage();
 page.setDefaultTimeout(20000);
 
+/** 页面内的同源请求；返回状态码、内容类型、原文与 JSON。 */
+const api = (path, init) =>
+  page.evaluate(
+    async ({ path, init }) => {
+      const response = await fetch(path, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        ...init,
+      });
+      const text = await response.text();
+      let body = null;
+      try {
+        body = JSON.parse(text);
+      } catch {
+        // 非 JSON 回答保留原文
+      }
+      return {
+        status: response.status,
+        contentType: response.headers.get('content-type') ?? '',
+        text,
+        body,
+      };
+    },
+    { path, init },
+  );
+
+/** 计算颜色里的 alpha；兼容 rgba()、rgb() 与 color(srgb …) 三种写法。 */
+function alphaOf(color) {
+  const rgb = /rgba?\(([^)]+)\)/.exec(color);
+  if (rgb) {
+    const parts = rgb[1].split(/[,/\s]+/).filter(Boolean);
+    if (parts.length < 4) return 1;
+    return parts[3].endsWith('%') ? Number.parseFloat(parts[3]) / 100 : Number(parts[3]);
+  }
+  const slash = /\/\s*([0-9.]+)(%?)\s*\)/.exec(color);
+  return slash ? Number(slash[1]) / (slash[2] === '%' ? 100 : 1) : 1;
+}
+
+// 截图与用例都会读取这两个按钮；文案来自插件中文字典
+const sweepButton = page.locator('button[aria-label="清理会话"]');
+const restartButton = page.locator('button[aria-label="重启 DSH"]');
+
+const consoleErrors = [];
+page.on('console', (message) => {
+  if (message.type() === 'error') consoleErrors.push(message.text());
+});
+page.on('pageerror', (error) => consoleErrors.push(error.message));
+
 try {
   const resp = await page.goto(url, { waitUntil: 'domcontentloaded' });
   if (resp?.status() !== 200) throw new Error(`打开 GUI 失败：HTTP ${resp?.status()}`);
@@ -157,129 +110,156 @@ try {
   const dismissed = await dismissWelcome(page);
   console.log('GUI 已加载', JSON.stringify({ welcome: dismissed }));
 
-  await check('C1 对话冒烟：工具卡片与回复', async () => {
-    // 工作区未就绪时先选择测试仓库
-    const placeholder = await composer(page).getAttribute('placeholder');
-    if (placeholder && /选择.*工作区|Choose a workspace/.test(placeholder)) {
-      await page.getByRole('button', { name: LABELS.workspace[0] }).first().click();
-      await page.waitForTimeout(1500);
-      await page.getByRole('treeitem').first().click();
-      await page.waitForTimeout(2000);
-    }
-    const box = composer(page);
-    await box.click();
-    await box.fill('ECHO_CASE:gui');
-    await clickLabel(page, LABELS.send, false);
-    // 前缀由持久化配置决定，只断言回显形状
-    await page
-      .getByText(/mock：工具返回 \[[^\]]+\]/)
-      .first()
-      .waitFor({ timeout: 60000 });
-    await page.screenshot({ path: join(shots, 'c1-reply.png'), fullPage: true });
-
-    // 展开本轮，读取工具卡片
-    const turn = page.getByText(LABELS.turn).last();
-    if (await turn.count()) {
-      await turn.click();
-      await page.waitForTimeout(1200);
-    }
-    for (const name of LABELS.toolGroup) {
-      const btn = page.getByRole('button', { name });
-      if (await btn.count()) {
-        await btn.first().click();
-        await page.waitForTimeout(1200);
-        break;
-      }
-    }
-    const text = await page.locator('body').innerText();
-    if (!/demo_echo/.test(text)) throw new Error('对话中没有 demo_echo 工具卡片');
-    await page.screenshot({ path: join(shots, 'c1-toolcard.png'), fullPage: true });
-    return { reply: true, toolCard: 'demo_echo' };
+  await check('A3 状态路由报告五行可用', async () => {
+    const answer = await api('/api/dsh-practical-tools/status');
+    assert.equal(answer.status, 200, `状态路由返回 HTTP ${answer.status}`);
+    const rows = answer.body?.rows ?? {};
+    assert.equal(rows.sweeper, true, `rows.sweeper 为 ${JSON.stringify(rows.sweeper)}`);
+    for (const key of ['sweeper', 'reasoningReset', 'claudeSkills', 'restart', 'mobile'])
+      assert.equal(typeof rows[key], 'boolean', `rows.${key} 应为布尔值`);
+    return { rows };
   });
 
-  await check('C3 前端示例：输入区上方出现示例行且可交互', async () => {
-    const row = page.locator('[data-dsh-template-demo]');
-    await row.waitFor({ state: 'visible', timeout: 30000 });
-    const counter = row.locator('[data-dsh-template-demo-count]');
-    const before = (await counter.innerText()).trim();
-    await row.getByRole('button').first().click();
-    await page.waitForTimeout(500);
-    const after = (await counter.innerText()).trim();
-    if (before === after) throw new Error(`点击后计数未变化：${before}`);
-    await page.screenshot({ path: join(shots, 'c3-demo-dock.png'), fullPage: true });
-    return { before, after };
+  await check('C1 侧栏出现清理会话与重启按钮', async () => {
+    await sweepButton.waitFor({ state: 'visible', timeout: 30000 });
+    await restartButton.waitFor({ state: 'visible', timeout: 30000 });
+    assert.equal(await sweepButton.count(), 1, '清理会话按钮数量不为 1');
+    assert.equal(await restartButton.count(), 1, '重启按钮数量不为 1');
+    await page.screenshot({ path: join(shots, 'c1-sidebar.png'), fullPage: true });
+    return { sweeper: true, restart: true };
   });
 
-  await check('C2 插件页：被测插件已安装且启用', async () => {
-    await openPluginsPage(page);
-    // 插件清单首次加载要读取整个宿主包树，可能超过 10 秒；等到已安装区出现再断言
-    await page.getByText(LABELS.installed[0], { exact: false }).first().waitFor({ timeout: 60000 });
-    // 插件卡片以包名标记，显示名随语言与元数据变化
-    const card = page.locator(`[data-plugin-package="${PLUGIN}"]`);
-    await card.waitFor({ state: 'visible', timeout: 60000 });
-    // 宿主用 role=switch 的控件承载启用状态，aria-label 为「启用 <显示名>」
-    const toggle = card.getByRole('switch');
-    if (!(await toggle.count())) throw new Error(`${PLUGIN} 没有启用开关`);
-    const enabled = (await toggle.first().getAttribute('aria-checked')) === 'true';
-    await page.screenshot({ path: join(shots, 'c2-plugins.png'), fullPage: true });
-    if (!enabled) throw new Error(`${PLUGIN} 的启用开关为关闭状态`);
-    return { plugin: PLUGIN, listed: true, enabled };
-  });
+  await check('C2 两个按钮的悬停样式一致', async () => {
+    const idle = await sweepButton.evaluate((el) => getComputedStyle(el).backgroundColor);
+    assert(alphaOf(idle) < 0.02, `清理会话按钮静止时背景不透明：${idle}`);
 
-  await check('C4 配置页：改前缀保存后热重载生效', async () => {
-    await openRowConfig(page);
-    const toggle = await configControl(page, ['启用 demo 工具', 'Enable the demo tool'], 'switch');
-    if ((await toggle.getAttribute('aria-checked')) !== 'true')
-      throw new Error('demo 开关初始应为开');
-    const prefix = await configControl(page, LABELS.prefixLabel);
-    // 取一个与当前值不同的前缀，重复运行也能观察到变化
-    const current = await prefix.inputValue();
-    const next = current === 'gui' ? 'gui2' : 'gui';
-    await prefix.fill(next);
-    const save = await configControl(page, LABELS.save, 'button');
-    if (await save.isDisabled()) throw new Error('改前缀后保存按钮应可用');
-    await save.click();
-    // 宿主异步写盘，最多轮询 15 秒
-    let patch = '';
-    for (let waited = 0; waited < 15000; waited += 500) {
-      await page.waitForTimeout(500);
-      patch = readFileSync(join(root, 'cordis.patch.yml'), 'utf8');
-      if (patch.includes(`prefix: ${next}`)) break;
-    }
-    if (!patch.includes(`prefix: ${next}`)) throw new Error(`cordis.patch.yml 未写入 ${next}`);
-    await page.screenshot({ path: join(shots, 'c4-config.png'), fullPage: true });
-
-    // 不重启 GUI：新会话的工具回显已使用新前缀
-    await sendEcho(page, next);
-    await page.screenshot({ path: join(shots, 'c4-echo.png'), fullPage: true });
-    return { prefix: next, patch: 'cordis.patch.yml' };
-  });
-
-  await check('C5 空白前缀被拒绝，无效草稿不写入', async () => {
-    /** profile 补丁里写入的前缀。 */
-    const storedPrefix = () => {
-      const patch = readFileSync(join(root, 'cordis.patch.yml'), 'utf8');
-      return /^\s*prefix:\s*(.*)$/m.exec(patch)?.[1] ?? '';
+    const hovered = async (locator) => {
+      await locator.hover();
+      await page.waitForTimeout(200);
+      return locator.evaluate((el) => getComputedStyle(el).backgroundColor);
     };
-    await openRowConfig(page);
-    const before = storedPrefix();
-    const prefix = await configControl(page, LABELS.prefixLabel);
-    await prefix.fill('   ');
-    await page.waitForTimeout(500);
-    const save = await configControl(page, LABELS.save, 'button');
-    if (!(await save.isDisabled())) throw new Error('空白前缀时保存按钮应禁用');
-    const text = await page.locator('[data-plugin-config]').innerText();
-    const shown = LABELS.invalidPrefix.some((message) => text.includes(message));
-    if (!shown) throw new Error('没有显示非法前缀提示');
-    if (storedPrefix() !== before)
-      throw new Error(`空白草稿改变了配置：${before} -> ${storedPrefix()}`);
-    await page.screenshot({ path: join(shots, 'c5-invalid.png'), fullPage: true });
+    const sweep = await hovered(sweepButton);
+    const restart = await hovered(restartButton);
+    const sweepAlpha = alphaOf(sweep);
+    const restartAlpha = alphaOf(restart);
+    assert(Math.abs(sweepAlpha - 0.12) < 0.03, `清理会话悬停底色 alpha=${sweepAlpha}：${sweep}`);
+    assert(Math.abs(restartAlpha - 0.12) < 0.03, `重启悬停底色 alpha=${restartAlpha}：${restart}`);
+    assert(
+      Math.abs(sweepAlpha - restartAlpha) < 0.01,
+      `两个按钮悬停 alpha 不一致：${sweepAlpha} / ${restartAlpha}`,
+    );
+    await page.screenshot({ path: join(shots, 'c2-hover.png'), fullPage: true });
+    return { sweep, restart, alpha: sweepAlpha };
+  });
 
-    // 保存合法前缀，保证重复运行时的初始状态稳定
-    await prefix.fill('rdt');
-    await save.click();
-    await page.waitForTimeout(2500);
-    return { invalidRejected: true, restored: 'rdt' };
+  await check('C3 手机断点加载样式并放大触控控件', async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(600);
+    const mobile = await page.evaluate(() => {
+      const html = document.documentElement.getAttribute('data-dsh-mobile-css');
+      const rules = [...document.styleSheets]
+        .flatMap((sheet) => {
+          try {
+            return [...sheet.cssRules];
+          } catch {
+            return [];
+          }
+        })
+        .map((rule) => rule.cssText)
+        .join('\n');
+      const sizeOf = (label) => {
+        const button = document.querySelector(`button[aria-label="${label}"]`);
+        if (button === null) return null;
+        const style = getComputedStyle(button);
+        return {
+          minWidth: Number.parseFloat(style.minWidth) || 0,
+          minHeight: Number.parseFloat(style.minHeight) || 0,
+        };
+      };
+      return {
+        html,
+        media: matchMedia('(max-width: 767px)').matches,
+        hasTouchRule: /min-height:\s*44px/.test(rules),
+        hasDrawerWidth: /328px/.test(rules),
+        sweep: sizeOf('清理会话'),
+        restart: sizeOf('重启 DSH'),
+      };
+    });
+    assert.equal(
+      mobile.html === 'link' || mobile.html === 'style',
+      true,
+      `html 标记为 ${mobile.html}`,
+    );
+    assert.equal(mobile.media, true, '390px 宽度未命中手机断点');
+    assert.equal(mobile.hasTouchRule, true, '样式表缺少 44px 触控尺寸规则');
+    assert.equal(mobile.hasDrawerWidth, true, '样式表缺少 328px 抽屉宽度');
+    for (const [label, size] of [
+      ['清理会话', mobile.sweep],
+      ['重启 DSH', mobile.restart],
+    ]) {
+      assert(size, `手机断点下找不到${label}按钮`);
+      assert(size.minWidth >= 44, `${label} 的最小宽度为 ${size.minWidth}px`);
+      assert(size.minHeight >= 44, `${label} 的最小高度为 ${size.minHeight}px`);
+    }
+    await page.screenshot({ path: join(shots, 'c3-mobile.png'), fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 1000 });
+    return { flag: mobile.html, drawer: 328, touch: 44 };
+  });
+
+  await check('C4 控制台无 error', async () => {
+    assert.deepEqual(
+      consoleErrors,
+      [],
+      `控制台有 ${consoleErrors.length} 条 error：${consoleErrors[0] ?? ''}`,
+    );
+    return { errors: 0 };
+  });
+
+  await check('B1 清理会话路由拒绝空请求体', async () => {
+    const answer = await api('/api/dsh-practical-tools/sweep', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    });
+    assert.equal(answer.status, 400, `空请求体应返回 400，实际 ${answer.status}`);
+    assert.equal(answer.body?.ok, false, '空请求体应回答 ok:false');
+    return { status: answer.status };
+  });
+
+  await check('B2 清理会话路由返回计数', async () => {
+    const answer = await api('/api/dsh-practical-tools/sweep', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ids: [], keepIds: [] }),
+    });
+    assert.equal(answer.status, 200, `清理路由返回 HTTP ${answer.status}`);
+    assert.equal(answer.body?.ok, true, '清理路由应回答 ok:true');
+    for (const key of ['archived', 'deleted', 'skipped', 'deferred', 'failed'])
+      assert.equal(typeof answer.body?.[key], 'number', `清理结果缺少 ${key}`);
+    return {
+      archived: answer.body.archived,
+      deleted: answer.body.deleted,
+      skipped: answer.body.skipped,
+    };
+  });
+
+  await check('B3 重启 info 路由返回进程信息', async () => {
+    const answer = await api('/api/dsh-practical-tools/restart/info');
+    assert.equal(answer.status, 200, `重启 info 返回 HTTP ${answer.status}`);
+    assert.equal(typeof answer.body?.pid, 'number', '重启 info 缺少 pid');
+    assert.equal(typeof answer.body?.startedAt, 'number', '重启 info 缺少 startedAt');
+    assert.match(String(answer.body?.runtime), /^(web|desktop)$/, '重启 info 的 runtime 不合法');
+    return { pid: answer.body.pid, runtime: answer.body.runtime };
+  });
+
+  await check('B4 手机样式表路由返回 328 宽度', async () => {
+    const answer = await api('/api/dsh-practical-tools/mobile.css');
+    assert.equal(answer.status, 200, `手机样式表返回 HTTP ${answer.status}`);
+    assert.match(answer.contentType, /text\/css/, `内容类型为 ${answer.contentType}`);
+    assert(!answer.text.includes('__DRAWER_WIDTH__'), '样式表仍含未替换的宽度占位符');
+    assert(answer.text.includes('328px'), '样式表缺少 328px 抽屉宽度');
+    assert(answer.text.includes('max-width: 767px'), '样式表缺少手机断点');
+    return { bytes: answer.text.length };
   });
 } catch (e) {
   console.error(e);

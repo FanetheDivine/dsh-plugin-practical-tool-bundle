@@ -6,7 +6,6 @@ set -euo pipefail
 REPO_IN=${1:?用法: bash setup-env.sh <插件仓库绝对路径> [profile名]}
 REPO=$(cygpath -m "$REPO_IN")   # D:/... 形式，供 node 与 dsh 使用
 REPO_U=$(cygpath -u "$REPO_IN") # /d/... 形式，供 bash 使用
-PLUGIN=$(node -p "require(process.argv[1]).name" "$REPO/package.json")
 PROFILE=${2:-rdt-$(date +%Y%m%d)}
 DSH_ROOT=$(cygpath -u "${DSH_HOME:-$HOME/.dsh}")
 PDIR_U="$DSH_ROOT/profiles/$PROFILE"
@@ -14,11 +13,15 @@ PDIR=$(cygpath -m "$PDIR_U")
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && pwd)
 
 echo "== 1/6 对齐宿主版本"
-# 默认取 @deepseek-ai/dsh-agent 的版本，RDT_DSH_VERSION 可指定其他宿主版本
-WANT=${RDT_DSH_VERSION:-$(node -p "require(process.argv[1]).devDependencies['@deepseek-ai/dsh-agent'] ?? ''" "$REPO/package.json")}
+# 版本来源：RDT_DSH_VERSION > package.json 的 @deepseek-ai/dsh-agent > dsh --version
+WANT=${RDT_DSH_VERSION:-}
+if [ -z "$WANT" ]; then
+  WANT=$(node -p "const p = require(process.argv[1]); p.devDependencies?.['@deepseek-ai/dsh-agent'] ?? p.dependencies?.['@deepseek-ai/dsh-agent'] ?? ''" "$REPO/package.json" 2>/dev/null || true)
+fi
+[ -n "$WANT" ] || WANT=$(dsh --version 2>/dev/null || true)
 WANT=${WANT#^}
 WANT=${WANT#\~}
-[ -n "$WANT" ] || { echo "package.json 缺少 @deepseek-ai/dsh-agent 依赖"; exit 1; }
+[ -n "$WANT" ] || { echo "无法确定宿主版本：设置 RDT_DSH_VERSION，或让 package.json 声明 @deepseek-ai/dsh-agent，或把 dsh 加入 PATH"; exit 1; }
 HAVE=$(dsh --version 2>/dev/null || echo "")
 HOST_ENV=""
 if [ "$HAVE" = "$WANT" ]; then
@@ -79,7 +82,8 @@ WELCOME_PATCH=""
   config:
     welcomeNoticeVersion: \"$WELCOME\"
 "
-if grep -q "rdt-mock" "$PDIR_U/cordis.patch.yml" 2>/dev/null; then
+# 已有测试配置且没有旧版插件行时保留；旧版插件行带 config，会被下面的新配置覆盖
+if grep -q "rdt-mock" "$PDIR_U/cordis.patch.yml" 2>/dev/null && ! grep -q -- "- id: dsh-plugin-practical-tool-bundle$" "$PDIR_U/cordis.patch.yml"; then
   echo "cordis.patch.yml 已含测试配置，保留"
   # 补齐 HMR 监听；旧补丁可能只有 [] 占位，追加列表项前先去掉
   if ! grep -q "id: hmr" "$PDIR_U/cordis.patch.yml"; then
@@ -94,9 +98,7 @@ EOF
 else
   cat >"$PDIR_U/cordis.patch.yml" <<EOF
 # 实机测试隔离配置：停用真实模型，会话与存储写入 profile 目录，mock provider 由末尾 insert 加载。
-- id: $PLUGIN
-  config:
-    prefix: rdt
+# 插件不提供配置项，行由包内 cordis.patch.yml 装载，这里不写 config。
 - id: hmr
   config:
     root: ["$REPO/dist"]
@@ -139,7 +141,7 @@ cat <<EOF
   ${HOST_ENV:-# 全局宿主，无需额外 env}
   export RDT_PROFILE=$PROFILE RDT_PROFILE_DIR=$PDIR RDT_REPO=$REPO
   cd $PDIR_U
-  node run-test.mjs                               # 后端用例
+  node run-test.mjs                               # 装载用例
   eval \$(bash $SCRIPTS_DIR/gui-up.sh $PROFILE)   # 启动 GUI 并导出 RDT_GUI_URL
   cd $REPO_U && node $SCRIPTS_DIR/browser-test.mjs   # 浏览器用例
 browser-test.mjs 依赖仓库的 playwright，因此在仓库内运行。

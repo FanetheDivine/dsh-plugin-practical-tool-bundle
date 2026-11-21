@@ -10,48 +10,51 @@
 
 pnpm 的 minimum release age 策略会拒绝发布时间过短的包。
 
-- `@deepseek-ai/dsh-*` 依赖未列入 `minimumReleaseAgeExclude` 时，`pnpm install` 失败。
+- `@deepseek-ai/dsh-*` 依赖未列入 `minimumReleaseAgeExclude` 时 `pnpm install` 失败。
 - 列入规则见[宪章](../.specify/memory/constitution.md)原则 I。
+
+## loader 内部 API
+
+- 聚合状态路由读取 `loader.entries()` 的 `disabled` 与 fiber 状态；这两项属于 loader 内部结构。
+- 宿主升级后字段可能变化，表现是状态路由判断错误：界面该出现时没有出现，或该消失时没有消失。
+- 条目 id 的组路径前缀由 loader 决定，当前是 `include:<行 id>`；前缀风格变化时按最后一段匹配仍然有效，同名行会取第一个匹配。
+- `FiberState` 在运行时不存在，代码按序号 2 判断，改动需要同步核对 cordis 的枚举顺序。
 
 ## 共享宿主实例
 
-插件运行时使用宿主提供的 cordis、dsh-tools 与 zod。
-
-- 这些包被打进 bundle 时会产生第二份实例，类型判断和服务注入随之失效。
+- 插件运行时使用宿主提供的 cordis、dsh-session、dsh-llm 与 dsh-skill。
+- 这些包被打进 bundle 时会产生第二份实例，`appendPluginRecord` 的品牌检查随之失败。
 - 保持 external 的规则见 [how-it-works.md](./how-it-works.md#依赖复用)。
+
+## 删除会话
+
+- 清理会永久删除会话日志目录，无法撤销。
+- 主视图正在显示的会话与运行中的会话会被跳过或延后。
+- 已归档集合中仍有条目但日志已消失的会话不再出现在计数里。
+
+## 重启
+
+- 桌面重启依赖 Windows 的 `explorer.exe` 与 Windows Script Host；两者不可用时返回失败原因与日志路径。
+- 网页场景在受理后退出当前进程；端口被其他进程占用时新进程可能启动失败，日志在 `~/.dsh/logs`。
+- 页面在重启期间需要持续轮询，浏览器休眠会推迟刷新。
 
 ## 前端产物
 
-前端产物使用宿主约定的闭包工厂格式。
+- 前端产物是宿主约定的闭包工厂格式，格式变化时表现为界面不出现。
+- `PLATFORM_MODULES` 是宿主冻结模块表的副本，宿主升级后需要核对。
+- 前端服务可选：`slots`、`locale`、`workspaces` 缺失时对应功能静默跳过。
+- 状态路由请求失败时保留当前界面，因此行停用后最多延迟一个轮询周期才消失。
 
-- 格式变化时插件加载失败，表现为示例行不出现。
-- `PLATFORM_MODULES` 是宿主冻结模块表的副本；宿主升级后需要核对，缺失的模块在运行时请求失败。
-- 客户端依赖版本与宿主不一致时，槽位或 locale 服务可能不可用。
-- 前端没有独立页面入口，直接执行 `dist/client.js` 不会渲染。
-- 前端服务可选：缺失服务对应的功能静默跳过，不报错也不提示。`slots` 缺失时插件启用但没有可见效果。
-- `ctx.inject` 回调在服务变化时重跑；回调内未经 `ctx.effect` 登记的资源不会清理，会重复注册。
-- 示例行依赖 `conversation.composer.dock` 槽位；宿主调整 UI 后槽位名或位置可能变化。
+## 技能监听
 
-## 配置面板
+- 技能目录不存在时按 5 秒间隔探测，目录创建前不会报错。
+- 同时监听的项目数上限为 64，超出后淘汰最久未使用的项目。
+- 单个技能文件超过 256KB 时跳过。
 
-- 只有标记 `.volatile()` 的字段出现在“插件”面板的配置页。
-- 配置被更高层覆盖时，宿主拒绝保存，表单保留草稿并提示未接受。
-- 表单命名空间是插件行在 profile 里的 id；`plugins.row.config` 的键是 `<包名>#<行 id>`。行 id 与包名不同时两处都要改。
-- 配置页依赖 `dsh-client-ui-plugin-manager` 与 `dsh-client-ui-settings` 的客户端包；宿主未加载这两个包时配置页不出现。
+## 手机样式
 
-## 严格配置
-
-配置中出现未知键或非法值时，插件加载失败。
-
-- 用户在 `cordis.patch.yml` 写错键名会导致插件停用。
-- 用 `dsh --profile <profile> --dump-config` 检查最终配置。
-
-## 国际化
-
-- 宿主在注册时捕获的文案（如命令描述）保持注册时的语言，切换语言后仍显示旧语言；槽位渲染的文案随切换更新。
-- locale 服务只负责选择、持久化、语言匹配、键回退与 `<html lang>`，复数规则与双向布局由语言包自理。
-- 元数据或字典缺当前语言时按回退链取值；缺 `meta.title` 与 `meta.description` 时回落 `package.json` 的字段，可能显示英文包名。
-- 规范见 [i18n.md](./i18n.md)。
+- 远程页面走 `fetch` 注入样式，注入前页面按原尺寸绘制，可能出现一次尺寸跳变。
+- 样式依赖宿主既有的 767px 断点与手机侧栏结构；宿主改版后选择器可能失效。
 
 ## Windows 长路径
 

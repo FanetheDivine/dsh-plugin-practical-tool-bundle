@@ -2,16 +2,20 @@
 
 ## 本地加载
 
-1. 运行 `pnpm dev`，tsdown 监听 `src/` 并重建 `dist/index.mjs` 与 `dist/client.js`。
-2. 在 profile 的 `cordis.patch.yml` 中加入：
+1. 运行 `pnpm dev`，tsdown 监听 `src/` 并重建 `dist/*.mjs` 与 `dist/client.js`。
+2. 在 profile 的 `cordis.patch.yml` 中加入要启用的行：
 
 ```yaml
 - insert:
-    - id: dsh-plugin-template-dev
+    - id: dsh-plugin-practical-tool-bundle-dev
       name: file:///<repo>/dist/index.mjs
+    - id: session-sweeper-dev
+      name: file:///<repo>/dist/sweeper.mjs
 ```
 
-前端部分不需要额外的插件行。宿主读到包的 `dsh.client` 声明后加载 `dist/client.js`。改动前端代码后重建并刷新页面。
+- 根行负责前端与状态路由；只加载功能行时没有界面。
+- 状态路由按行 id 判断，开发时行 id 需要与 `src/rows.ts` 的 `ROW_IDS` 一致；运行时条目的组路径前缀会被忽略。
+- 浏览器验证用 `playwright` 驱动本机 Chrome，脚本见 `.dsh/skills/real-device-test/scripts/`。
 
 ## 热更新
 
@@ -29,26 +33,23 @@
 - 插件行指向新路径时同时修改 `id`，确保宿主加载新路径的模块。
 - 仓库路径含 `.dsh` 等点目录时，去掉默认的 `**/.*` 忽略规则。
 
-## 前端构建
+## 构建
 
 `tsdown.config.ts` 有两组构建：
 
 | 构建组 | 入口 | 产物 |
 | --- | --- | --- |
-| 宿主 | `src/index.ts` | `dist/index.mjs` |
+| 宿主 | `src/index.ts`、`src/sweeper/index.ts`、`src/reasoning-reset/index.ts`、`src/claude-skills/index.ts`、`src/restart/index.ts`、`src/mobile/index.ts` | `dist/<name>.mjs` |
 | 浏览器 | `src/client/index.ts` | `dist/client.js` |
 
+- 宿主构建用对象形式的 `entry`，产物名与 `package.json` 的 `exports` 子路径一一对应。
+- `neverBundle: true` 让宿主依赖保持 external；`alwaysBundle: ['yaml']` 只把 yaml 打进产物。
 - 浏览器组用 banner/footer/intro 包成 `window.__ModuleLoader__.load({ id, factory })` 闭包工厂。
-- `PLATFORM_MODULES` 列出宿主冻结模块表提供的模块，构建时保持 external。
-- 新增或升级宿主客户端依赖时，核对平台种子表与宿主版本。
-- 类型声明由 `tsc -p tsconfig.build.json` 生成到 `dist/client/`。
+- 类型声明由 `tsc -p tsconfig.build.json` 生成到 `dist/`。
 
 ## 前端 UI 链接
 
-前端 UI 里 `a` 标签的 `href` MUST 使用完整 URL：
-
-- 完整 URL 含协议与主机，例如 `https://github.com/FanetheDivine/dsh-plugin-template`。
-- Desktop 用应用内地址加载前端页面。`href` 写成相对路径时，点击后指向应用地址，打不开目标。
+前端 UI 里 `a` 标签的 `href` MUST 使用完整 URL，例如 `https://github.com/FanetheDivine/dsh-plugin-practical-tool-bundle`。Desktop 用应用内地址加载页面，相对路径会指向应用地址。
 
 ## 环境要求
 
@@ -79,84 +80,70 @@
 | Job | 触发 | 内容 |
 | --- | --- | --- |
 | `check` | PR、打 tag | Node 24 上运行 `pnpm run full-check` |
-| `publish` | 默认禁用 | 打 tag 时发布 npm，用 OIDC 换取发布令牌 |
+| `publish` | 打 tag | 用 OIDC 发布 npm |
 
 - `full-check` 依次运行 `check` 与 `build`：`check` 不读取 `dist`，产物测试在 `build` 末尾执行。
-- `publish` 用 Node 24 自带的 npm 发布：Trusted Publishing（OIDC）要求 npm ≥ 11.5.1，Node 24 的安装包已满足，工作流不单独安装 npm。
-- `publish` 由 `if: false` 禁用，原触发条件以注释保留；`pnpm run release` 推送的 tag 不会在 npm 产生新版本。
-- 模板转化时解禁，步骤见 [template-conversion.md](./template-conversion.md)。
+- `publish` 使用 npm Trusted Publishing（OIDC），首次发布前需要把仓库与工作流绑定到 npm 包。
 
 ## 测试
 
 | 文件 | 覆盖内容 |
 | --- | --- |
-| `tests/plugin.test.ts` | 配置校验、热重载、demo 工具、`apply` 接线 |
-| `tests/config-form.test.ts` | 配置页草稿、空白前缀拒绝、保存、恢复默认与放弃 |
-| `tests/release-archive.test.mjs` | CHANGELOG 归档计划 |
-| `tests/client.test.ts` | 前端服务声明、字典与槽位注册、示例行与配置页渲染 |
-| `tests/client-bundle.test.ts` | `dist/client.js` 的注册契约与导出（产物测试） |
-| `tests/package-pack.test.ts` | npm 包只含发布所需文件，含前端产物与元数据资源（产物测试） |
-| `tests/pack-report.test.ts` | `npm pack --json` 的数组与对象两种报告形状都能解析 |
-| `tests/metadata.test.ts` | 插件元数据的结构、键集、禁用字符与清单声明 |
-| `tests/dependency-versions.test.ts` | `dsh-*` 依赖版本一致，并以同版本列入 `minimumReleaseAgeExclude` |
-| `tests/dist-freshness.test.ts` | 产物新鲜度判定的三种状态 |
+| `tests/row-status.test.ts` | 行状态判定：启用、禁用、fiber 未 ACTIVE、loader 缺失 |
+| `tests/status-route.test.ts` | 状态路由的注册与响应形状 |
+| `tests/sweeper.test.ts` | 归档与删除、非法 id、`keepIds`、延后、失败计数 |
+| `tests/restart.test.ts` | 重启计划、端口推导、重复请求、响应形状 |
+| `tests/reasoning-reset.test.ts` | 失败分类、去推理块、投影、每步一次 |
+| `tests/claude-skills.test.ts` | 项目根查找、frontmatter、技能过滤、provider 注册 |
+| `tests/mobile.test.ts` | 宽度替换、响应头、读取失败 |
+| `tests/client-sweeper.test.ts` | 扫帚槽位、悬停样式、面板文案 |
+| `tests/client-restart.test.ts` | 按钮槽位、确认流程、rail 样式 |
+| `tests/client-mobile.test.ts` | 本地 link 与远程 fetch 注入 |
+| `tests/client-status.test.ts` | 状态轮询与界面装卸 |
+| `tests/client-bundle.test.ts` | `dist/client.js` 的注册契约（产物测试） |
+| `tests/package-pack.test.ts` | 包内容：入口、assets、图标与 locale（产物测试） |
+| `tests/pack-report.test.ts` | `npm pack --json` 的两种报告形状 |
+| `tests/metadata.test.ts` | 元数据的结构、键集与清单声明 |
+| `tests/dependency-versions.test.ts` | `dsh-*` 依赖版本一致并列入 `minimumReleaseAgeExclude` |
+| `tests/dist-freshness.test.ts` | 产物新鲜度判定 |
 | `tests/worktree-extension.test.ts` | worktree 扩展的创建、复用与清理 |
-| `tests/sync-main.test.ts` | 主工作区 `main` 快进到 `origin/main`；`--prepare` 整理其他分支、未提交变更、未推送提交与 detached HEAD |
-| `tests/helpers.ts` | 模拟宿主与客户端 `ctx`，记录注册、事件监听与日志 |
-| `tests/support/primitives.ts` | 把平台组件包解析到源码，避开已发布产物内联的依赖 |
+| `tests/sync-main.test.ts` | 主工作区同步与 `--prepare` 整理 |
+| `tests/helpers.ts` | 模拟宿主与客户端 `ctx` |
 
 测试要求见[宪章](../.specify/memory/constitution.md)原则 II。文案与元数据的规范见 [i18n.md](./i18n.md)。
 
-vitest 拆成 `code` 与 `dist` 两个 project。产物测试读取 `dist`，由 `build` 末尾的 `test:dist` 执行；`test:code` 不读取 `dist`。产物缺失或早于构建输入时，产物测试失败并提示运行 `pnpm build`。
+vitest 拆成 `code` 与 `dist` 两个 project。产物测试读取 `dist`，由 `build` 末尾的 `test:dist` 执行；`test:code` 不读取 `dist`。
 
-纯文档流程变更不新增测试文件时，仍须运行质量门禁。专项验收步骤记录在对应 spec 的 `quickstart.md`。
+## 实机验证
 
-浏览器用例由仓库内的 `playwright` 驱动无头 Chrome。`vitest.config.ts` 把 `@deepseek-ai/dsh-client-ui-primitives` 指向包的源码：已发布的 `lib` 内联了 shiki、katex 等未声明的依赖，源码只依赖 react、clsx 与 `dsh-client-store`。
+按 spec 的 `quickstart.md` 验证。`real-device-test` skill 提供在真实宿主上安装、启用与清理 profile 的流程。
 
 ## Spec Kit 流程
 
-DSH 从 `.dsh/skills/` 加载 `speckit-*` skill，在对话框输入 `/` 调用。
-
-- 执行条件见 [AGENTS.md](../AGENTS.md#开发流程) 的开发流程节。
-- 分支与 worktree 规则见 `/speckit-worktree-create`。
+DSH 从 `.dsh/skills/` 加载 `speckit-*` skill，在对话框输入 `/` 调用。执行条件见 [AGENTS.md](../AGENTS.md#开发流程)。
 
 | 步骤 | 命令 | 产出 |
 | --- | --- | --- |
-| 1 | `/speckit-specify <需求描述>` | 主工作区 `main` 同步到 `origin/main`，占号分支、worktree、规格草稿与待确认决策 |
-| 2 | `/speckit-clarify` | 探索结果、分批访谈记录、更新后的 spec，以及完整规格的 `Approved` 或 `Waived` 审查记录 |
-| 3 | `/speckit-plan` | `plan.md` 与设计产物、实现细节访谈记录，以及完整计划的 `Approved` 或 `Waived` 审查记录 |
-| 4 | `/speckit-tasks` | 通过规格与计划门禁后生成的 `tasks.md` |
+| 1 | `/speckit-specify <需求描述>` | 主工作区 `main` 同步、worktree、规格草稿与待确认决策 |
+| 2 | `/speckit-clarify` | 分批访谈记录与完整规格的审查记录 |
+| 3 | `/speckit-plan` | `plan.md` 与设计产物、实现细节访谈记录与计划审查记录 |
+| 4 | `/speckit-tasks` | `tasks.md` |
 | 5 | `/speckit-analyze` | 跨产物一致性报告 |
-| 6 | `/speckit-implement` | 复核门禁并按阶段提交的实现；新未决项返回对应访谈 |
-| 7 | `/speckit-worktree-finish` | 基线同步、编号校验、PR、无上限等待 CI 与合并、合并后同步主工作区 `main` 并清理，或以 `abandon` 放弃；两种模式都在清理前同步 `main` |
+| 6 | `/speckit-implement` | 按阶段提交的实现 |
+| 7 | `/speckit-worktree-finish` | PR、等待 CI 与合并、合并后清理 |
 
-- `base_ref` 默认为 `origin/main`，必须已包含 `.specify/` 与 `.dsh/skills/`。
-- 创建 spec 时，`create-worktree.sh` 先同步远程全部分支，再推送 `<type>/<NNN>-<name>` 占号，最后创建 worktree。
-- 同号分支按完整分支名排序，保留第一个，其余自动改号；占号失败时中止，不留下分支与 worktree。
-- `/speckit-worktree-finish` 在推送与 PR 前运行 `check-spec-number.sh`，发现同号时停止。
+- `base_ref` 默认为 `origin/main`。
+- 创建 spec 时先同步远程全部分支，再推送 `<type>/<NNN>-<name>` 占号，最后创建 worktree。
 - `worktrees/` 已加入 `.gitignore`，biome 与 vitest 也会跳过它。
 
 ## 维护 Spec Kit 核心流程
 
-核心 `.dsh/skills/speckit-*/SKILL.md` 由 Spec Kit integration 生成，仓库没有对应的本地命令渲染源。修改这些文件时：
+核心 `.dsh/skills/speckit-*/SKILL.md` 由 Spec Kit integration 生成。修改这些文件时：
 
 1. 保留 front matter。
 2. 更新 `.specify/integrations/dsh.manifest.json` 中被修改 skill 的 SHA-256。
 3. 修改 `.specify/templates/` 或 `.specify/scripts/` 时，同步更新 `.specify/integrations/speckit.manifest.json` 中对应条目。
 4. 上游 Spec Kit 刷新后重新审查并应用本地流程定制。
-
-可用以下命令计算候选文件哈希，再仅更新实际修改的 manifest 条目：
-
-```sh
-sha256sum .dsh/skills/speckit-*/SKILL.md .specify/templates/*.md
-```
-
-spec 与 plan 模板包含状态、待确认决策、澄清记录和审查记录。访谈与审查的完整执行规则归属对应 skill：
-
-- [speckit-clarify](../.dsh/skills/speckit-clarify/SKILL.md)：需求探索、分批需求访谈与完整规格审查。
-- [speckit-plan](../.dsh/skills/speckit-plan/SKILL.md)：技术探索、分批实现细节访谈与完整计划审查。
-- [speckit-tasks](../.dsh/skills/speckit-tasks/SKILL.md)：任务生成前的规格与计划门禁。
-- [speckit-implement](../.dsh/skills/speckit-implement/SKILL.md)：实现前复核与新未决项处理。
 
 ## 维护 worktree 扩展
 
@@ -169,47 +156,38 @@ spec 与 plan 模板包含状态、待确认决策、澄清记录和审查记录
 
 脚本行为由 `tests/worktree-extension.test.ts` 与 `tests/sync-main.test.ts` 覆盖。
 
-- `scripts/bash/spec-number-lib.sh`：编号解析与同号分支匹配。
-- `scripts/bash/check-spec-number.sh`：交付前的编号唯一性校验。
-- 修改 `commands/` 后同步 `.dsh/skills/speckit-worktree-*/SKILL.md` 的正文，保留 front matter。
-
 ## 文件地图
 
 ```text
-cordis.patch.yml            # 插件行，dsh plugin add 时插入 profile
-src/
-├── index.ts                # 打包入口，导出 name、inject、apply、Config
-├── config.ts               # Config schema、默认值、严格校验与热重载读取
-├── constants.ts            # 共享常量
-├── demo-tool.ts            # demo_echo 工具
-├── events.ts               # agent 事件监听示例
-├── types.ts                # 宿主类型再导出
-├── utils.ts                # 零依赖工具函数
-└── client/
-    ├── index.ts            # 浏览器入口：注册字典、示例行与配置页
-    ├── config-form.ts      # 配置页草稿模型与行键常量
-    ├── config-page.tsx     # 配置页的 summary 与 page 视图
-    ├── demo-dock.tsx       # 前端示例行组件
-    └── locales.ts          # 中英文字典与命名空间
-dist/
-├── index.mjs               # 宿主产物
-├── client.js               # 浏览器产物（闭包工厂）
-├── index.d.ts              # 宿主类型声明
-└── client/                 # 前端类型声明
-scripts/release-archive.mjs # 发布时归档 CHANGELOG
+cordis.patch.yml            # 根行与五个功能行
+assets/
+├── launcher.cjs            # 重启用的 detached 启动器
+└── mobile.css              # 手机样式表
+icon.svg                    # 插件图标
 locale/                     # 插件元数据资源，规范见 i18n.md
-tests/                      # vitest 单元测试
-changelogs/                 # 各版本的 CHANGELOG 归档
+src/
+├── index.ts                # 根行：状态路由
+├── rows.ts                 # 行 id 与路由常量
+├── row-status.ts           # 读 loader 汇总行状态
+├── types.ts                # 宿主类型再导出
+├── utils.ts                # JSON 响应与对象收窄
+├── sweeper/index.ts        # 清理会话路由
+├── reasoning-reset/index.ts# 清理推理块
+├── claude-skills/
+│   ├── index.ts            # 注册技能 provider
+│   └── provider.ts         # 技能目录扫描与监听
+├── restart/index.ts        # 重启路由
+├── mobile/index.ts         # 手机样式表路由
+└── client/
+    ├── index.ts            # 前端入口
+    ├── locales.ts          # 中英文字典
+    ├── status.ts           # 状态轮询与界面装卸
+    ├── sweeper.tsx         # 扫帚按钮与面板
+    ├── restart.tsx         # 重启按钮、对话框与遮罩
+    └── mobile.ts           # 手机样式表挂载
+dist/                       # 构建产物
+scripts/release-archive.mjs # 发布时归档 CHANGELOG
+tests/                      # vitest 测试
 docs/                       # 开发者文档
 specs/<NNN>-<name>/         # 每个需求的 spec、plan、tasks
-.dsh/skills/
-└── speckit-*/              # Spec Kit 流程 skill
-.specify/
-├── memory/constitution.md  # 项目宪章
-├── templates/              # Spec Kit 产物模板与审查区块
-├── integrations/           # 受管 skill、脚本与模板的 SHA-256 清单
-├── scripts/bash/           # Spec Kit 脚本
-├── extensions.yml          # 扩展钩子
-└── extensions/worktree/    # 本地 worktree 扩展
-.github/workflows/ci.yml    # CI：check（Node 24）与默认禁用的 publish
 ```

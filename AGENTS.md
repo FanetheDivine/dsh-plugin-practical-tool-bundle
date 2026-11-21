@@ -1,25 +1,17 @@
 # 项目说明
 
-DSH 插件模板，用 TypeScript 开发，用 tsdown 构建，用 biome 检查代码质量，用 vitest 运行测试。
+DSH 插件 `dsh-plugin-practical-tool-bundle`（中文标题「dsh使用工具组合包」）。一个包内的五行：清理会话、清理推理块、Claude 技能、重启按钮、手机触控放大。
 
 - 常用 pnpm 脚本：`dev`、`build`、`check`、`full-check`、`release`、`test:code`、`test:dist`、`lint`、`lint:fix`、`format`。
 - 命令说明见 [development.md](./docs/development.md#命令)。
 
 # 文档索引
 
-- [README.md](./README.md) 了解项目功能。
-- [how-it-works.md](./docs/how-it-works.md)：插件的构造方式与运行流程。
+- [README.md](./README.md) 了解功能、安装与路由。
+- [how-it-works.md](./docs/how-it-works.md)：行结构、路由与前端装卸。
 - [known-risks.md](./docs/known-risks.md)：已知风险与宿主限制。
-- [development.md](./docs/development.md)：本地开发、命令、测试、Spec Kit 命令一览、worktree 扩展维护与文件地图。
+- [development.md](./docs/development.md)：本地开发、命令、测试与文件地图。
 - [i18n.md](./docs/i18n.md)：插件元数据与前端字典的国际化规范。
-- [template-conversion.md](./docs/template-conversion.md)：变更类别、模板变更要求与模板转化步骤。
-
-# 模板说明
-
-本仓库是 DSH 插件模板。
-
-- 每个 spec 按 [template-conversion.md](./docs/template-conversion.md#变更类别) 声明变更类别。
-- 把模板改造成插件前，先读 [template-conversion.md](./docs/template-conversion.md#模板转化)，按其中的顺序执行。
 
 # 主工作区
 
@@ -54,6 +46,12 @@ DSH 插件模板，用 TypeScript 开发，用 tsdown 构建，用 biome 检查�
 
 - `tasks.md` 的每个阶段 MUST 对应一个 commit。
 - 阶段内标记 `[P]` 的任务可交给子代理并行。
+- 交付前 MUST 把各阶段提交压缩为一个 commit 再 push。
+
+# 发布前检查
+
+- 全部跟踪文件只包含公网 URL 与仓库内路径，规则见[宪章](./.specify/memory/constitution.md)原则 V。
+- 密码、令牌、私钥与本机专属路径不得进入提交，包含提交历史。
 
 # 写作规范
 

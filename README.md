@@ -1,36 +1,59 @@
-# dsh-plugin-template
+# dsh-plugin-practical-tool-bundle（dsh使用工具组合包）
 
-DSH 插件模板，含宿主机侧工具示例与 Web GUI 前端示例。
+一个 DSH 插件包，由一行根行与五行功能行组成。每行可以单独启用或停用。
 
 ## 功能
 
-- `demo_echo`：把文本加上前缀后回显。
-- agent 事件日志：输出 agent 创建、销毁、状态与 turn 结束。
-- 插件面板配置页：在“插件”页的行详情里改配置，保存后立即生效。
-- Web GUI 示例行：位于会话输入区上方，显示双语文案，按钮点击后计数递增。
-- 插件标题与描述随宿主语言切换，中英文各一份。
+| 行 | 功能 |
+| --- | --- |
+| 根行 | 提供浏览器半部与聚合状态路由，前端据此挂载其余三行的界面 |
+| `session-sweeper` | 侧栏底部的扫帚：先把未置顶会话（含未分组的）归档，再永久删除全部已归档会话及其日志 |
+| `reasoning-reset` | provider 拒绝历史推理块时，去掉模型可见历史里的推理块并重试同一步 |
+| `claude-skills` | 把项目 `.claude/skills` 下的技能只读并入会话技能目录 |
+| `restart-button` | 侧栏底部的重启按钮：网页场景重启服务，桌面场景重启应用 |
+| `mobile-touch-ui` | 手机上（≤767px）放大侧栏、会话列表、顶栏与输入区控件 |
+
+停用某行只下线它的路由或 provider，其余行照常运行；前端在一个轮询周期内跟着装卸界
+面，不需要刷新页面。
 
 ## 安装
 
 ```sh
-dsh plugin add <包名或本地目录>
+dsh plugin add dsh-plugin-practical-tool-bundle
+```
+
+本地开发时可直接加载仓库产物：
+
+```yaml
+- insert:
+    - id: dsh-plugin-practical-tool-bundle-dev
+      name: file:///<repo>/dist/index.mjs
 ```
 
 ## 配置
 
-| 键 | 默认值 | 说明 |
+插件不提供配置项。各行使用固定默认值：
+
+- 技能目录为项目根下的 `.claude/skills`。
+- 手机样式表的抽屉宽度为 328。
+- 重启日志写在 `~/.dsh/logs`。
+
+## 路由
+
+全部路由在 `/api/dsh-practical-tools/` 下，位于宿主的 `/api` 认证围栏内。
+
+| 路由 | 行 | 说明 |
 | --- | --- | --- |
-| `demoEnabled` | `true` | 是否注册 `demo_echo` |
-| `prefix` | `demo` | 回显前缀与日志前缀，至少一个非空白字符 |
+| `GET /status` | 根行 | 五行是否可用 |
+| `POST /sweep` | `session-sweeper` | 归档并删除会话 |
+| `GET /restart/info` | `restart-button` | 当前进程标识与运行形态 |
+| `POST /restart` | `restart-button` | 重启服务或应用 |
+| `GET /mobile.css` | `mobile-touch-ui` | 手机样式表 |
 
-两个字段都是 `volatile`：改动后插件不重启，工具与日志立即使用新值。
+接口形状见 [契约](specs/023-practical-tool-bundle/contracts/http-api.md)。
 
-在“插件”页打开本插件的行详情即可编辑；配置页的控件与官方插件一致，保存后写入 profile 的组合层。
+## 开发
 
-## 工具
-
-| 工具 | 参数 | 返回 |
-| --- | --- | --- |
-| `demo_echo` | `text` | `[prefix] (session <id>) <text>` |
-
-前端产物随包分发，宿主按 `package.json` 的 `dsh.client` 声明加载。
+- 工作机制见 [how-it-works.md](./docs/how-it-works.md)。
+- 开发与命令见 [development.md](./docs/development.md)。
+- 已知风险见 [known-risks.md](./docs/known-risks.md)。

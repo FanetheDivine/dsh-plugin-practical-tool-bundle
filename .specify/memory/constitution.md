@@ -1,24 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: 1.9.0 → 2.0.0
-- Modified principles:
-  - I. 宿主契约 → I. 宿主依赖版本：只保留依赖版本规则，以同版本 `@deepseek-ai/dsh` 为准
-  - IV. 测试同步 → II. 测试同步
-  - V. 文档结构 → III. 文档结构
-  - VI. 质量门禁 → IV. 质量门禁
-  - VIII. 公开引用 → V. 公开引用
-- Removed principles:
-  - II. 依赖归属：归属规则移入 `docs/how-it-works.md`，`minimumReleaseAgeExclude` 规则并入原则 I
-  - III. 严格配置：移入 `docs/how-it-works.md`
-  - VII. 模板定位：移入 `docs/template-conversion.md`
-  - IX. 国际化：移入 `docs/i18n.md`
+- Version change: 2.0.0 → 2.1.0
+- Modified principles: 无原则增删；标题与同步报告随项目更名更新
 - Added sections: 无
 - Removed sections: 无
-- Templates requiring updates: 无，plan、spec、tasks 模板在运行时读取本文件
+- 修订理由：仓库从模板转为实际插件 dsh-plugin-practical-tool-bundle，宪章不再以模板自称
 - Follow-up TODOs: 无
 -->
 
-# dsh-plugin-template Constitution
+# dsh-plugin-practical-tool-bundle Constitution
 
 ## Core Principles
 
@@ -38,7 +28,7 @@ Sync Impact Report
 - 测试 MUST 验证真实行为，不复述默认值或文案。
 - 单元测试 MUST 使用 `tests/helpers.ts` 的模拟 `ctx`。
 - 发布内容 MUST 由 package-pack 测试回归：
-  - 进包：`dist`、`cordis.patch.yml`、`README.md`。
+  - 进包：`dist`、`cordis.patch.yml`、`assets`、`locale`、`icon.svg`、`README.md`。
   - 不进包：`src`、`tests`、`scripts`。
 - 涉及宿主装载或真实对话链路的变更 SHOULD 在真实宿主上做端到端验证。
 - `dsh` 版本变更后 MUST 提醒用户执行实机测试，并说明变更的版本号。
@@ -51,7 +41,7 @@ Sync Impact Report
 
 | 文档 | 读者 | 归属内容 |
 | --- | --- | --- |
-| `README.md` | 插件用户 | 功能、安装、配置、工具 |
+| `README.md` | 插件用户 | 功能、安装、配置、路由 |
 | `AGENTS.md` | 每个会话的 Agent | 通用的信息和指令 |
 | 本宪章 | 执行 Spec Kit 流程的 Agent 与维护者 | 变更过程中必须遵循的硬约束 |
 | `docs/` | 开发者 | 工作机制、已知风险、开发说明 |
@@ -131,4 +121,4 @@ Sync Impact Report
   - PATCH：措辞澄清。
 - `/speckit-plan` 的 Constitution Check 与 `/speckit-analyze` MUST 逐条核对本宪章。
 
-**Version**: 2.0.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 2.1.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-21

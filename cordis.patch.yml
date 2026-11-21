@@ -1,4 +1,23 @@
-# 用于 dsh plugin add：插件安装后作为组合层插入的 preset 行（id = 插件名）
+# 本包由一行根行与五行功能行组成：根行提供前端产物与聚合状态路由，五行分别提供
+# 清理会话、清理推理块、Claude 技能、重启按钮与手机触控放大。停用任一行只下线该行
+# 的路由或 provider，其余行照常运行；前端从根行的状态路由得知哪些行可用。
+# Declaration only; no global/host configuration is touched.
 - insert:
-    - id: dsh-plugin-template
-      name: dsh-plugin-template
+    # 根行：携带浏览器半部与 GET /api/dsh-practical-tools/status。
+    - id: dsh-plugin-practical-tool-bundle
+      name: dsh-plugin-practical-tool-bundle
+    # 清理会话：侧栏底部扫帚与归档/删除路由。
+    - id: session-sweeper
+      name: dsh-plugin-practical-tool-bundle/sweeper
+    # 清理推理块：provider 拒绝历史推理块时去掉推理块并重试同一步。
+    - id: reasoning-reset
+      name: dsh-plugin-practical-tool-bundle/reasoning-reset
+    # Claude 技能：把项目 .claude/skills 并入技能目录，只读。
+    - id: claude-skills
+      name: dsh-plugin-practical-tool-bundle/claude-skills
+    # 重启按钮：侧栏底部按钮与重启路由。
+    - id: restart-button
+      name: dsh-plugin-practical-tool-bundle/restart
+    # 手机触控放大：≤767px 生效的样式表路由。
+    - id: mobile-touch-ui
+      name: dsh-plugin-practical-tool-bundle/mobile

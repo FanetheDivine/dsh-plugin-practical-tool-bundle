@@ -128,10 +128,10 @@ export interface ClientSlotRegistration {
 }
 
 /** 客户端服务名。 */
-export type ClientServiceName = 'slots' | 'locale' | 'configForms';
+export type ClientServiceName = 'slots' | 'locale' | 'configForms' | 'workspaces' | 'sessions';
 
 /** 全部客户端服务名。 */
-const CLIENT_SERVICES: ClientServiceName[] = ['slots', 'locale', 'configForms'];
+const CLIENT_SERVICES: ClientServiceName[] = ['slots', 'locale', 'configForms', 'workspaces'];
 
 /** 客户端 ctx 模拟的观测字段。 */
 export interface ClientMockState {
@@ -150,6 +150,10 @@ export interface ClientMockState {
   _effectDisposers: Array<() => void>;
   /** `ctx.inject` 声明过的依赖组，按调用顺序。 */
   _injectGroups: string[][];
+  /** `ctx.plugin` 启动过的插件。 */
+  _plugins: Array<{ apply?: (ctx: unknown) => unknown; name?: string }>;
+  /** 已卸载的插件。 */
+  _disposedPlugins: Array<{ apply?: (ctx: unknown) => unknown; name?: string }>;
 }
 
 /** 一个 `ctx.inject` 依赖组的运行态。 */
@@ -180,6 +184,8 @@ export function makeClientCtx(options: { services?: ClientServiceName[] } = {}) 
     _configFormScopes: [],
     _effectDisposers: [],
     _injectGroups: [],
+    _plugins: [],
+    _disposedPlugins: [],
   };
   const noop = () => true;
   /** 访问不可用服务时抛错。 */
@@ -206,6 +212,21 @@ export function makeClientCtx(options: { services?: ClientServiceName[] } = {}) 
       return fake.scope;
     },
   };
+  /** 工作区列表桩：默认一个空快照，可整体替换。 */
+  const workspaceSnapshot = {
+    phase: 'ready',
+    items: [] as Array<{ sessionIds: string[] }>,
+    pinnedSessionIds: [] as string[],
+    archivedSessionIds: [] as string[],
+  };
+  const workspacesService = {
+    list: {
+      getSnapshot: () => workspaceSnapshot,
+      subscribe: () => noop,
+    },
+  };
+  /** 会话列表桩：默认不可用，测试需要时用 `_setSessions` 注入。 */
+  let sessionsService: unknown;
   const slotsService = {
     inject(name: string, fn: () => unknown) {
       state._slotInjections.push(name);
@@ -278,6 +299,31 @@ export function makeClientCtx(options: { services?: ClientServiceName[] } = {}) 
     },
     get slots() {
       return require('slots', slotsService);
+    },
+    get workspaces() {
+      return require('workspaces', workspacesService);
+    },
+    get sessions() {
+      return require('sessions', sessionsService);
+    },
+    /** 可选服务：不可用时返回 undefined，与宿主一致。 */
+    get(name: ClientServiceName) {
+      if (!available.has(name)) return undefined;
+      if (name === 'slots') return slotsService;
+      if (name === 'locale') return localeService;
+      if (name === 'configForms') return configFormsService;
+      if (name === 'workspaces') return workspacesService;
+      return sessionsService;
+    },
+    /** 在子 fiber 中启动一个插件；`_plugins` 记录启动过的插件对象。 */
+    plugin(plugin: { apply?: (ctx: unknown) => unknown; name?: string }) {
+      state._plugins.push(plugin);
+      plugin.apply?.(ctx);
+      return {
+        dispose: async () => {
+          state._disposedPlugins.push(plugin);
+        },
+      };
     },
     /** 让服务变为可用，并加载依赖已齐的组。 */
     _grant(...names: ClientServiceName[]) {
