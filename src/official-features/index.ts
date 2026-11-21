@@ -1,6 +1,6 @@
 /**
  * 管理官方功能行：提供功能状态路由，并在运行期开关官方功能对应的宿主行与 preset 子行。
- * 导出 apply、路由注册与服务构造函数；关闭记录存在本包自己的存储域。
+ * 导出 apply、路由注册与服务构造函数；关闭记录存在本包自己的存储域，启动与启动完成后各施加一次。
  */
 import { OFFICIAL_FEATURES_PATH } from '../rows.ts';
 import type { Context } from '../types.ts';
@@ -33,6 +33,21 @@ const REAPPLY_ATTEMPTS = 8;
 
 /** 重新施加的重试间隔。 */
 const REAPPLY_INTERVAL_MS = 250;
+
+/**
+ * 宿主启动完成信号。
+ * 宿主经 `provideCmdline` 提供，属于可选服务，因此在行启动时软读取。
+ */
+interface AppReadyLike {
+  /** 启动成功提交后调用一次监听者；返回取消函数。 */
+  onReady(listener: () => void): () => void;
+}
+
+/** 读取宿主启动完成信号；宿主未提供时返回 undefined。 */
+function readAppReady(ctx: Context): AppReadyLike | undefined {
+  const ready = ctx.get('appReady') as AppReadyLike | undefined;
+  return ready !== undefined && typeof ready.onReady === 'function' ? ready : undefined;
+}
 
 /** 一条路由注册所需的最小 connection 结构。 */
 export interface ConnectionLike {
@@ -95,6 +110,8 @@ export interface FeatureServiceDeps {
   readonly pollMs?: number;
   /** 延迟函数，测试可注入。 */
   readonly sleep?: (ms: number) => Promise<void>;
+  /** 诊断输出；施加轮数用尽仍未达成时写一条。 */
+  readonly warn?: (message: string) => void;
 }
 
 /** 默认延迟实现。 */
@@ -113,6 +130,7 @@ export function createFeatureService(deps: FeatureServiceDeps): FeatureService {
   const reapplyIntervalMs = deps.reapplyIntervalMs ?? REAPPLY_INTERVAL_MS;
   const pollMs = deps.pollMs ?? POLL_MS;
   const sleep = deps.sleep ?? defaultSleep;
+  const warn = deps.warn ?? (() => {});
   const queue = createSerialQueue();
   let running = 0;
 
@@ -209,6 +227,13 @@ export function createFeatureService(deps: FeatureServiceDeps): FeatureService {
           if (appliedOff(loader, off)) return;
           await sleep(reapplyIntervalMs);
         }
+        // 轮数用尽仍未达成：留一条可诊断的记录，面板继续显示真实状态。
+        const pending = pendingOff(loader, off);
+        if (pending.length > 0) {
+          warn(
+            `[dsh-plugin-practical-tool-bundle] official-features reapply incomplete: ${pending.join(', ')}`,
+          );
+        }
       });
     },
     async dispose() {
@@ -227,25 +252,36 @@ export function createFeatureService(deps: FeatureServiceDeps): FeatureService {
 }
 
 /**
- * 记录里的功能是否都真的关掉了。
+ * 记录里还没真正关掉的功能。
  * 宿主行必须已经出现且停用；条目还没列出来的功能算未完成，因此会重试。
+ * @param loader - 宿主 loader。
+ * @param off - 关闭记录。
+ * @returns 未达成的功能标识。
  */
-function appliedOff(loader: LoaderLike, off: readonly FeatureId[]): boolean {
+function pendingOff(loader: LoaderLike, off: readonly FeatureId[]): FeatureId[] {
+  const pending: FeatureId[] = [];
   for (const id of off) {
     const feature = featureOf(id);
     if (feature === undefined) continue;
     let seen = false;
+    let done = true;
     for (const rowId of feature.hostRows) {
       const entry = findEntry(loader, rowId);
       if (entry === undefined) continue;
       seen = true;
-      if (!entry.disabled) return false;
+      if (!entry.disabled) done = false;
     }
-    if (!seen) return false;
+    if (!seen) done = false;
     const state = readFeatureStates(loader).find((item) => item.id === id);
-    if (state?.on === true) return false;
+    if (state?.on === true) done = false;
+    if (!done) pending.push(id);
   }
-  return true;
+  return pending;
+}
+
+/** 记录里的功能是否都真的关掉了。 */
+function appliedOff(loader: LoaderLike, off: readonly FeatureId[]): boolean {
+  return pendingOff(loader, off).length === 0;
 }
 
 /** 快照里是否还留着该功能的宿主行改动。 */
@@ -336,7 +372,11 @@ export function apply(ctx: Context): void {
 
       void (async () => {
         const store = await openStore(scoped);
-        const created = createFeatureService({ loader: readLoader(scoped), store });
+        const created = createFeatureService({
+          loader: readLoader(scoped),
+          store,
+          warn: (message) => scoped.logger.warn(message),
+        });
         if (!active) {
           await created.dispose();
           return;
@@ -346,6 +386,12 @@ export function apply(ctx: Context): void {
           registerOfficialFeatureRoutes(webCtx.connection, created),
           scoped.on('app-boot/config-reload', () => void created.reapply()),
         );
+        const appReady = readAppReady(scoped);
+        if (appReady !== undefined) {
+          // 启动完成后再施加一次：首次施加可能早于受管行装载完成而放弃。
+          // appReady 是宿主可选服务，缺失时只保留启动那一次。
+          offs.push(appReady.onReady(() => void created.reapply()));
+        }
         await created.reapply();
       })().catch((error: unknown) => {
         scoped.logger.warn(

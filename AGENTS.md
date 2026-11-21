@@ -1,14 +1,14 @@
 # 项目说明
 
-DSH 插件 `dsh-plugin-practical-tool-bundle`（中文标题「DSH实用工具组合包」）。一个包内的六行：一键清理会话、推理报错自动重试、加载项目 Claude 技能、重启按钮、手机大按钮、官方功能开关。
+DSH 插件 `dsh-plugin-practical-tool-bundle`（中文标题「DSH实用工具组合包」）。一个包内有一行根行与七行功能行：一键清理会话、推理报错自动重试、加载项目 Claude 技能、重启按钮、手机大按钮、官方功能开关、飞书任务与调度会话。另提供 `SA-调度会话` 与 `SA-任务会话` 两个预设。
 
 - 常用 pnpm 脚本：`dev`、`build`、`check`、`full-check`、`release`、`test:code`、`test:dist`、`lint`、`lint:fix`、`format`。
 - 命令说明见 [development.md](./docs/development.md#命令)。
 
 # 文档索引
 
-- [README.md](./README.md)：面向用户的功能简介。
-- [how-it-works.md](./docs/how-it-works.md)：行结构、路由与前端装卸。
+- [README.md](./README.md)：功能、安装、调度用法与路由。
+- [how-it-works.md](./docs/how-it-works.md)：行结构、路由、前端装卸、官方功能管理、调度服务、预设与存储。
 - [known-risks.md](./docs/known-risks.md)：已知风险与宿主限制。
 - [development.md](./docs/development.md)：本地开发、命令、测试与文件地图。
 - [i18n.md](./docs/i18n.md)：插件与行元数据、前端字典的国际化规范。
@@ -46,7 +46,6 @@ DSH 插件 `dsh-plugin-practical-tool-bundle`（中文标题「DSH实用工具�
 
 - `tasks.md` 的每个阶段 MUST 对应一个 commit。
 - 阶段内标记 `[P]` 的任务可交给子代理并行。
-- 交付前 MUST 把各阶段提交压缩为一个 commit 再 push。
 
 # 发布前检查
 

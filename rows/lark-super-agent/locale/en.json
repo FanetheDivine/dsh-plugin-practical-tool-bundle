@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Lark task dispatch",
+    "description": "Dispatch tasks through the separately installed lark-bridge, coordinate dispatch and worker sessions, and maintain notes, reports, and task archives."
+  }
+}

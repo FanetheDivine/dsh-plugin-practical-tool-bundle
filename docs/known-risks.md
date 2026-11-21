@@ -24,6 +24,8 @@ pnpm 的 minimum release age 策略会拒绝发布时间过短的包。
 
 - 运行期覆写属宿主内部契约：`loader.update`、`agentPresets.inspectCompositions` 的替代物（本包直接读 preset 声明的 `config.plugins`）与 `app-boot/config-reload` 都可能随宿主升级变化。
 - 覆写是易失的：任何一次配置重组都会还原，本包订阅事件后重新施加；事件未触发或施加失败时，面板会显示真实状态，功能可能回到开启。
+- 启动期重新施加依赖宿主 `appReady` 可选服务。宿主不提供该服务时只有启动那次施加，受管行晚于 2 秒装载完成时，该次启动后功能可能仍为开启。
+- 两次施加的轮数用尽后只写一条 warn，面板不额外提示；用户只能从开关的真实状态判断关闭未生效。
 - 撤销依赖内存里的基线，进程重启后基线丢失，改由记录重新施加；基线只在本次进程内有效。
 - 宿主存储域写入不在写入时校验：写出的对象必须自带格式版本。文件被手工改坏时按无记录运行，切换返回 `store-failed`。
 - `zod` 作为 peer 由宿主提供，与 storage-domain 声明的版本一致；已安装插件是否取得同一份实例需要实机核对。
@@ -35,6 +37,33 @@ pnpm 的 minimum release age 策略会拒绝发布时间过短的包。
 - 插件运行时使用宿主提供的 cordis、dsh-session、dsh-llm 与 dsh-skill。
 - 这些包被打进 bundle 时会产生第二份实例，`appendPluginRecord` 的品牌检查随之失败。
 - 保持 external 的规则见 [how-it-works.md](./how-it-works.md#依赖复用)。
+
+## lark-super-agent
+
+### 上游状态文件
+
+- 调度服务读取 `$DSH_HOME/lark-bridge/state.json` 的 `sessionId` 与 `workspaceRoot`。这是 `dsh-plugin-lark-bridge` 的内部存储格式。
+- 上游修改路径或字段后，调度会话解析与上报投递会失效；状态路由报告能识别的问题。
+
+### 全局工具叠加
+
+- 全局行与预设子行的工具叠加，`SA-调度会话` 的实际工具集取决于整个 profile。
+- 其他组合包可能增加工具或引入同名工具，本行不收窄全局工具。
+
+### 独立 meta-tools 重复
+
+- 独立安装的 `dsh-plugin-meta-tools` 与本包预设子行同时启用时，同名工具会注册两次。
+- 用户应停用独立安装的行或预设内的 `meta-tools` 子行。
+
+### 预设手动选择
+
+- 用户必须在 lark-bridge 配置页手动把桥接会话预设选为 `SA-调度会话`。
+- 选错预设时，桥接会话缺少调度工具与提示词；`GET /api/dsh-practical-tools/lark-super-agent/status` 的 `issues` 报告该问题。
+
+### shell 后台任务
+
+- `SA-调度会话` 不含 `tool-jobs`，shell 工具没有 `run_in_background` 参数。
+- 命令超时后会被终止，不会转入后台任务。
 
 ## 删除会话
 
