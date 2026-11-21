@@ -1,0 +1,220 @@
+// SA-调度会话子行测试：依赖注入、提示词、五个工具的参数转换与结果。
+import { ToolArgsError, type ToolDefinition } from '@deepseek-ai/dsh-tools';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { LarkSuperAgentService } from '../src/lark-super-agent/api.ts';
+import { apply, name } from '../src/sa-dispatch/index.ts';
+import { SA_DISPATCH_PROMPT } from '../src/sa-dispatch/prompt.ts';
+import type { Context } from '../src/types.ts';
+import { makeCtx } from './helpers.ts';
+
+interface PromptSectionLike {
+  name: string;
+  order: number;
+  text: string;
+}
+
+function makeService() {
+  return {
+    createTask: vi.fn(),
+    updateTask: vi.fn(),
+    setWorkspaceNote: vi.fn(),
+    removeWorkspaceNote: vi.fn(),
+    listCandidates: vi.fn(),
+    sendReport: vi.fn(),
+    notifyFailure: vi.fn(),
+  } satisfies LarkSuperAgentService;
+}
+
+function mount() {
+  const base = makeCtx();
+  const service = makeService();
+  const sections: PromptSectionLike[] = [];
+  const groups: string[][] = [];
+  const injected = Object.assign(base, {
+    larkSuperAgent: service,
+    systemPrompt: {
+      section(section: PromptSectionLike) {
+        sections.push(section);
+        return () => true;
+      },
+    },
+  });
+  const ctx = Object.assign(injected, {
+    inject(deps: string[], callback: (context: unknown) => void) {
+      groups.push([...deps]);
+      callback(injected);
+      return () => true;
+    },
+  });
+  apply(ctx as unknown as Context);
+  return {
+    base,
+    service,
+    sections,
+    groups,
+    tools: base._registeredTools as unknown as ToolDefinition[],
+  };
+}
+
+function tool(tools: ToolDefinition[], toolName: string): ToolDefinition {
+  const definition = tools.find((entry) => entry.name === toolName);
+  if (definition === undefined) throw new Error(`missing tool ${toolName}`);
+  return definition;
+}
+
+describe('SA-调度会话子行', () => {
+  it('注入共享服务并注册提示词段与五个工具', () => {
+    const host = mount();
+
+    expect(name).toBe('sa-dispatch');
+    expect(host.groups).toEqual([['larkSuperAgent', 'systemPrompt', 'tools']]);
+    expect(host.sections).toEqual([
+      { name: 'sa-dispatch:instructions', order: 700, text: SA_DISPATCH_PROMPT },
+    ]);
+    expect(host.tools.map((entry) => entry.name)).toEqual([
+      'task_create',
+      'task_update',
+      'workspace_note_set',
+      'workspace_note_remove',
+      'task_candidates',
+    ]);
+    for (const definition of host.tools) {
+      expect(definition.description).toMatch(/^[A-Za-z]/);
+      expect(definition.parameters.type).toBe('object');
+    }
+  });
+
+  it('task_create 转换消息字段并返回任务标识', async () => {
+    const host = mount();
+    host.service.createTask.mockResolvedValue({ taskId: 'task-1' });
+
+    const result = await tool(host.tools, 'task_create').execute(
+      {
+        title: 'Investigate failure',
+        workspace_id: 'workspace-1',
+        message: { text: '查一下 xxx', message_id: 'message-1' },
+      },
+      {} as never,
+    );
+
+    expect(host.service.createTask).toHaveBeenCalledWith({
+      title: 'Investigate failure',
+      workspaceId: 'workspace-1',
+      message: { text: '查一下 xxx', messageId: 'message-1' },
+    });
+    expect(result).toEqual({ taskId: 'task-1' });
+  });
+
+  it('task_update 转换全部字段并传递 completed 的自动归档结果', async () => {
+    const host = mount();
+    host.service.updateTask.mockResolvedValue({
+      taskId: 'task-1',
+      status: 'completed',
+      archived: true,
+    });
+
+    const result = await tool(host.tools, 'task_update').execute(
+      {
+        task_id: 'task-1',
+        status: 'completed',
+        add_session_ids: ['session-1'],
+        add_message: { text: '补充要求', message_id: 'message-2' },
+        title: 'Updated title',
+      },
+      {} as never,
+    );
+
+    expect(host.service.updateTask).toHaveBeenCalledWith({
+      taskId: 'task-1',
+      status: 'completed',
+      addSessionIds: ['session-1'],
+      addMessage: { text: '补充要求', messageId: 'message-2' },
+      title: 'Updated title',
+    });
+    expect(result).toEqual({ taskId: 'task-1', status: 'completed', archived: true });
+  });
+
+  it('task_update 拒绝没有更新字段的调用', async () => {
+    const host = mount();
+
+    await expect(
+      tool(host.tools, 'task_update').execute({ task_id: 'task-1' }, {} as never),
+    ).rejects.toBeInstanceOf(ToolArgsError);
+    expect(host.service.updateTask).not.toHaveBeenCalled();
+  });
+
+  it('工作区笔记工具转换可选字段并返回服务结果', async () => {
+    const host = mount();
+    host.service.setWorkspaceNote.mockResolvedValue({ workspaceId: 'workspace-1', created: true });
+    host.service.removeWorkspaceNote.mockResolvedValue({
+      workspaceId: 'workspace-1',
+      removed: false,
+    });
+
+    const setResult = await tool(host.tools, 'workspace_note_set').execute(
+      { workspace_id: 'workspace-1', summary: 'Project A', keywords: ['a', 'project'] },
+      {} as never,
+    );
+    const removeResult = await tool(host.tools, 'workspace_note_remove').execute(
+      { workspace_id: 'workspace-1' },
+      {} as never,
+    );
+
+    expect(host.service.setWorkspaceNote).toHaveBeenCalledWith({
+      workspaceId: 'workspace-1',
+      summary: 'Project A',
+      keywords: ['a', 'project'],
+    });
+    expect(host.service.removeWorkspaceNote).toHaveBeenCalledWith('workspace-1');
+    expect(setResult).toEqual({ workspaceId: 'workspace-1', created: true });
+    expect(removeResult).toEqual({ workspaceId: 'workspace-1', removed: false });
+  });
+
+  it('task_candidates 传递可选任务并按工具契约返回 tasks', async () => {
+    const host = mount();
+    host.service.listCandidates.mockResolvedValue({
+      candidates: [
+        {
+          sessionId: 'session-1',
+          title: 'Existing work',
+          running: false,
+          taskIds: ['task-1'],
+          lastActiveAt: '2026-11-21T00:00:00+08:00',
+        },
+      ],
+    });
+
+    const result = await tool(host.tools, 'task_candidates').execute(
+      { workspace_id: 'workspace-1', task_id: 'task-1' },
+      {} as never,
+    );
+
+    expect(host.service.listCandidates).toHaveBeenCalledWith('workspace-1', 'task-1');
+    expect(result).toEqual({
+      candidates: [
+        {
+          sessionId: 'session-1',
+          title: 'Existing work',
+          running: false,
+          tasks: ['task-1'],
+          lastActiveAt: '2026-11-21T00:00:00+08:00',
+        },
+      ],
+    });
+  });
+
+  it('提示词保留中文分类例句并覆盖派发、上报、记忆与卡住处理', () => {
+    expect(SA_DISPATCH_PROMPT).toContain('查一下 xxx');
+    expect(SA_DISPATCH_PROMPT).toContain('之前那个 xxx 做完了吗');
+    expect(SA_DISPATCH_PROMPT).toContain('现在有哪些任务');
+    expect(SA_DISPATCH_PROMPT).toContain('<引用消息>要注意 xxx');
+    expect(SA_DISPATCH_PROMPT).toContain('task_candidates');
+    expect(SA_DISPATCH_PROMPT).toContain('AGENTS.md');
+    expect(SA_DISPATCH_PROMPT).toContain('<work_session_message');
+    expect(SA_DISPATCH_PROMPT).toContain('<work_session_failure');
+    expect(SA_DISPATCH_PROMPT).toContain("status: 'completed'");
+    expect(SA_DISPATCH_PROMPT).toMatch(/read.*copied.*file/is);
+    expect(SA_DISPATCH_PROMPT).toMatch(/stuck|no progress/i);
+  });
+});
