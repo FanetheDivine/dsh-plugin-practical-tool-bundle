@@ -46,7 +46,6 @@ DSH 插件 `dsh-plugin-practical-tool-bundle`（中文标题「DSH实用工具�
 
 - `tasks.md` 的每个阶段 MUST 对应一个 commit。
 - 阶段内标记 `[P]` 的任务可交给子代理并行。
-- 交付前 MUST 把各阶段提交压缩为一个 commit 再 push。
 
 # 发布前检查
 
