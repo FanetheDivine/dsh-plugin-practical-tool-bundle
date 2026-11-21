@@ -302,3 +302,43 @@ describe('apply 的行接线', () => {
     expect(loader.entry('include:ui-goal')?.disabled).toBe(false);
   });
 });
+
+describe('施加轮数用尽', () => {
+  it('写一条 warn，包含未达成的功能 id', async () => {
+    const loader = runningLoader();
+    const warnings: string[] = [];
+    const rejected = Object.assign(loader, {
+      update: async () => {
+        throw new Error('loader rejected');
+      },
+    });
+    const service = createFeatureService({
+      loader: rejected,
+      store: makeStore(['goal']),
+      waitMs: 0,
+      reapplyAttempts: 2,
+      reapplyIntervalMs: 0,
+      warn: (message) => warnings.push(message),
+    });
+
+    await service.reapply();
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('goal');
+  });
+
+  it('达成后不再写 warn', async () => {
+    const loader = runningLoader();
+    const warnings: string[] = [];
+    const service = createFeatureService({
+      loader,
+      store: makeStore(['goal']),
+      waitMs: 0,
+      reapplyAttempts: 2,
+      reapplyIntervalMs: 0,
+      warn: (message) => warnings.push(message),
+    });
+
+    await service.reapply();
+    expect(warnings).toEqual([]);
+  });
+});

@@ -180,3 +180,143 @@ describe('行接线在记录不可用时', () => {
     expect(routes).toEqual(['/api/dsh-practical-tools/official-features']);
   });
 });
+
+/** 等待接线内部的异步启动与重新施加落定。 */
+async function flush(): Promise<void> {
+  for (let i = 0; i < 6; i += 1) await new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
+
+/** 行接线用的宿主上下文：loader、存储域与可选的启动完成信号。 */
+function makeRowCtx(options: {
+  loader: ReturnType<typeof makeLoader>;
+  off?: string[];
+  appReady?: { onReady(listener: () => void): () => void };
+}) {
+  let record = [...(options.off ?? [])];
+  const storeReads: number[] = [];
+  const closes: number[] = [];
+  const routes: string[] = [];
+  let cleanup: (() => void) | undefined;
+  const logger = { debug: () => {}, info: () => {}, warn: () => {} };
+  const injected = {
+    connection: {
+      fetch: {
+        register: (route: { path: string }) => {
+          routes.push(route.path);
+          return () => {};
+        },
+      },
+    },
+    get(name: string) {
+      if (name === 'loader') return options.loader;
+      if (name === 'appReady') return options.appReady;
+      return undefined;
+    },
+    get storageDomain() {
+      return {
+        open: async () => ({
+          global: {
+            get: () => {
+              storeReads.push(1);
+              return { version: 1, off: record };
+            },
+            set: async (value: { off: string[] }) => {
+              record = [...value.off];
+            },
+          },
+          close: async () => {
+            closes.push(1);
+          },
+        }),
+      };
+    },
+    logger,
+    effect(fn: () => unknown) {
+      cleanup = fn() as (() => void) | undefined;
+    },
+    on() {
+      return () => {};
+    },
+  };
+  const ctx = {
+    get: injected.get,
+    inject(deps: string[], callback: (context: unknown) => void) {
+      if (!deps.includes('storageDomain')) throw new Error('missing storageDomain dep');
+      callback(injected);
+      return () => true;
+    },
+    effect: injected.effect,
+  };
+  return {
+    ctx,
+    storeReads,
+    closes,
+    routes,
+    runCleanup: () => cleanup?.(),
+  };
+}
+
+describe('启动完成信号', () => {
+  it('启动施加一次，启动完成后再施加一次', async () => {
+    const loader = makeLoader([
+      { id: 'include:schedule', disabled: true },
+      { id: 'include:ui-schedule', disabled: true },
+    ]);
+    const listeners: Array<() => void> = [];
+    const row = makeRowCtx({
+      loader,
+      off: ['schedule'],
+      appReady: {
+        onReady(listener) {
+          listeners.push(listener);
+          return () => {};
+        },
+      },
+    });
+
+    applyRow(row.ctx as never);
+    await flush();
+    expect(row.routes).toEqual(['/api/dsh-practical-tools/official-features']);
+    expect(row.storeReads).toHaveLength(1);
+    expect(listeners).toHaveLength(1);
+
+    listeners[0]();
+    await flush();
+    expect(row.storeReads).toHaveLength(2);
+  });
+
+  it('宿主未提供启动完成信号时只施加一次', async () => {
+    const loader = makeLoader([
+      { id: 'include:schedule', disabled: true },
+      { id: 'include:ui-schedule', disabled: true },
+    ]);
+    const row = makeRowCtx({ loader, off: ['schedule'] });
+
+    applyRow(row.ctx as never);
+    await flush();
+    expect(row.storeReads).toHaveLength(1);
+  });
+
+  it('行卸载时取消启动完成信号的监听', async () => {
+    const loader = makeLoader([{ id: 'include:schedule', disabled: true }]);
+    let cancelled = 0;
+    const row = makeRowCtx({
+      loader,
+      off: ['schedule'],
+      appReady: {
+        onReady() {
+          return () => {
+            cancelled += 1;
+          };
+        },
+      },
+    });
+
+    applyRow(row.ctx as never);
+    await flush();
+    row.runCleanup();
+    await flush();
+    expect(cancelled).toBe(1);
+    expect(row.closes).toHaveLength(1);
+  });
+});
