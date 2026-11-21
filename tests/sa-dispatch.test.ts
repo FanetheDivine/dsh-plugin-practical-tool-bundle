@@ -217,4 +217,20 @@ describe('SA-调度会话子行', () => {
     expect(SA_DISPATCH_PROMPT).toMatch(/read.*copied.*file/is);
     expect(SA_DISPATCH_PROMPT).toMatch(/stuck|no progress/i);
   });
+
+  it('提示词要求始终派发、先匹配工作区并守住调度边界', () => {
+    expect(SA_DISPATCH_PROMPT).toContain('## Always dispatch');
+    expect(SA_DISPATCH_PROMPT).toContain('## Pick a workspace first');
+    expect(SA_DISPATCH_PROMPT).toContain('## Stay in bounds');
+    expect(SA_DISPATCH_PROMPT).toContain('must be assigned to a worker session');
+    expect(SA_DISPATCH_PROMPT).toContain(
+      'Do not suggest that the dispatch session do the work itself',
+    );
+    expect(SA_DISPATCH_PROMPT).toContain('ask the user to register');
+    expect(SA_DISPATCH_PROMPT).toContain('Do not guess');
+    expect(SA_DISPATCH_PROMPT).toContain(
+      'Dispatch only into a workspace registered in workspaces.json',
+    );
+    expect(SA_DISPATCH_PROMPT).toMatch(/Assign project inspections.*worker session/is);
+  });
 });
