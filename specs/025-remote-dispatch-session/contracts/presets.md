@@ -34,7 +34,7 @@ config:
 | `tool-web` | `@deepseek-ai/dsh-tool-web` | `fetch: true`、`searchTimeoutMs: 60000` |
 | `skill-filesystem` | `@deepseek-ai/dsh-skill-filesystem` | 不写 `customSkillDirs`，见 P-015 |
 | `tool-skill` | `@deepseek-ai/dsh-tool-skill` | — |
-| `compaction` | `cordis:group` | 与标准预设相同的三行 |
+| `compaction` | `cordis:group` | 与标准预设相同的三行，其中 `compaction-basic` 配置 `thresholdRatio: 0.3` |
 | `meta-tools` | `dsh-plugin-meta-tools` | 十一项全开，`session_preset: sa-worker` |
 | `sa-dispatch` | `dsh-plugin-practical-tool-bundle/sa-dispatch` | 笔记写工具、`task_candidates` 与提示词段 |
 
@@ -60,5 +60,6 @@ config:
 
 - 两个预设都不含 `@deepseek-ai/dsh-tool-ask-user`。
 - `sa-dispatch` 的工具行只有上表所列。
+- `sa-dispatch` 的 `compaction-basic` 带 `thresholdRatio: 0.3`，标准预设的压缩组不变。
 - `sa-worker` 与标准预设快照相比，只差 `tool-ask-user`、`sa-worker` 与 `customSkillDirs`。
 - 两个预设都不设为默认，补丁不改动 `agent-preset-registry`。
