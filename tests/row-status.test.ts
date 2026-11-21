@@ -1,4 +1,4 @@
-// 行状态测试：读 loader 条目判断六个功能行是否可用，覆盖禁用、fiber 状态与 loader 缺失。
+// 行状态测试：读 loader 条目判断七个功能行是否可用，覆盖禁用、fiber 状态与 loader 缺失。
 import { describe, expect, it } from 'vitest';
 
 import { type LoaderEntryLike, readRowStatus } from '../src/row-status.ts';
@@ -28,6 +28,7 @@ describe('readRowStatus', () => {
         entry('restart-button', { state: 2 }),
         entry('mobile-touch-ui', { state: 2 }),
         entry('official-features', { state: 2 }),
+        entry('lark-super-agent', { state: 2 }),
       ]),
     );
     expect(status).toEqual({
@@ -37,6 +38,7 @@ describe('readRowStatus', () => {
       restart: true,
       mobile: true,
       officialFeatures: true,
+      larkSuperAgent: true,
     });
   });
 
@@ -47,10 +49,12 @@ describe('readRowStatus', () => {
         entry('restart-button', { state: 1 }),
         entry('mobile-touch-ui'),
         entry('official-features', { state: 0 }),
+        entry('lark-super-agent', { disabled: true, state: 2 }),
         // claude-skills 与 reasoning-reset 不在条目的树上
       ]),
     );
     expect(status.officialFeatures).toBe(false);
+    expect(status.larkSuperAgent).toBe(false);
     expect(status.sweeper).toBe(false);
     expect(status.restart).toBe(false);
     expect(status.mobile).toBe(false);
@@ -66,6 +70,7 @@ describe('readRowStatus', () => {
       restart: null,
       mobile: null,
       officialFeatures: null,
+      larkSuperAgent: null,
     });
   });
 });

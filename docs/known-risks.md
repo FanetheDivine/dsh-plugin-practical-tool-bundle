@@ -36,6 +36,33 @@ pnpm 的 minimum release age 策略会拒绝发布时间过短的包。
 - 这些包被打进 bundle 时会产生第二份实例，`appendPluginRecord` 的品牌检查随之失败。
 - 保持 external 的规则见 [how-it-works.md](./how-it-works.md#依赖复用)。
 
+## lark-super-agent
+
+### 上游状态文件
+
+- 调度服务读取 `$DSH_HOME/lark-bridge/state.json` 的 `sessionId` 与 `workspaceRoot`。这是 `dsh-plugin-lark-bridge` 的内部存储格式。
+- 上游修改路径或字段后，调度会话解析与上报投递会失效；状态路由报告能识别的问题。
+
+### 全局工具叠加
+
+- 全局行与预设子行的工具叠加，`SA-调度会话` 的实际工具集取决于整个 profile。
+- 其他组合包可能增加工具或引入同名工具，本行不收窄全局工具。
+
+### 独立 meta-tools 重复
+
+- 独立安装的 `dsh-plugin-meta-tools` 与本包预设子行同时启用时，同名工具会注册两次。
+- 用户应停用独立安装的行或预设内的 `meta-tools` 子行。
+
+### 预设手动选择
+
+- 用户必须在 lark-bridge 配置页手动把桥接会话预设选为 `SA-调度会话`。
+- 选错预设时，桥接会话缺少调度工具与提示词；`GET /api/dsh-practical-tools/lark-super-agent/status` 的 `issues` 报告该问题。
+
+### shell 后台任务
+
+- `SA-调度会话` 不含 `tool-jobs`，shell 工具没有 `run_in_background` 参数。
+- 命令超时后会被终止，不会转入后台任务。
+
 ## 删除会话
 
 - 清理会永久删除会话日志目录，无法撤销。
