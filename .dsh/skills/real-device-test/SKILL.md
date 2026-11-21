@@ -9,7 +9,7 @@ description: 在真实 DSH 宿主上端到端测试本插件，验证插件在 D
 
 | 类别 | 验证内容 |
 | --- | --- |
-| A 宿主装载 | profile 创建、插件安装、根行与五行激活、状态路由、已安装 dist 与仓库一致 |
+| A 宿主装载 | profile 创建、插件安装、根行与六行激活、状态路由、已安装 dist 与仓库一致 |
 | B 后端路由 | 清理会话、重启 info、手机样式表 |
 | C 前端展示 | 两个侧栏按钮、悬停样式一致、手机宽度放大 |
 | D 宿主漂移 | 宿主接口或行为与插件假设不一致 |
@@ -56,7 +56,7 @@ cd <profile目录>
 node run-test.mjs
 ```
 
-- 驱动用宿主的 `runProfile` 启动 profile，随后在 loader 中检查根行与五行。
+- 驱动用宿主的 `runProfile` 启动 profile，随后在 loader 中检查根行与六行。
 - 断言包括条目 id、入口模块名、`disabled` 与 `fiber.state`，并核对已安装版本与 dist 哈希。
 - 结果写入 `results.json`。全部通过时退出码为 0。
 - 首个用例检查装载。装载失败时中止后续用例。
@@ -66,7 +66,7 @@ node run-test.mjs
 
 | 用例 | 断言 |
 | --- | --- |
-| A1 装载 | 根行与五行在 loader 中启用，条目 id 与入口模块名正确 |
+| A1 装载 | 根行与六行在 loader 中启用，条目 id 与入口模块名正确 |
 | A2 产物一致 | 已安装版本与 `dist/index.mjs` 哈希和仓库一致 |
 
 mock provider 只完成一次模型回合，固定回复「mock：已收到」。它让 GUI 保持可用，后端对话用例已由路由用例取代。
@@ -115,7 +115,7 @@ pnpm build        # 或 pnpm dev，持续监听 src
 
 | 用例 | 操作 | 断言 |
 | --- | --- | --- |
-| A3 状态路由 | 页面内 `fetch('/api/dsh-practical-tools/status')` | `rows.sweeper === true`，五行均为布尔值 |
+| A3 状态路由 | 页面内 `fetch('/api/dsh-practical-tools/status')` | `rows.sweeper === true`，六行均为布尔值 |
 | B1 清理会话拒绝空体 | `POST /sweep`，请求体 `{}` | HTTP 400，`ok:false` |
 | B2 清理会话计数 | `POST /sweep`，`{ ids: [], keepIds: [] }` | HTTP 200，`ok:true`，五个计数为数字 |
 | B3 重启 info | `GET /restart/info` | `pid`、`startedAt` 为数字，`runtime` 为 `web` 或 `desktop` |

@@ -11,6 +11,8 @@
       name: file:///<repo>/dist/index.mjs
     - id: session-sweeper-dev
       name: file:///<repo>/dist/sweeper.mjs
+    - id: official-features-dev
+      name: file:///<repo>/dist/official-features.mjs
 ```
 
 - 根行负责前端与状态路由；只加载功能行时没有界面。
@@ -39,7 +41,7 @@
 
 | 构建组 | 入口 | 产物 |
 | --- | --- | --- |
-| 宿主 | `src/index.ts`、`src/sweeper/index.ts`、`src/reasoning-reset/index.ts`、`src/claude-skills/index.ts`、`src/restart/index.ts`、`src/mobile/index.ts` | `dist/<name>.mjs` |
+| 宿主 | `src/index.ts`、`src/sweeper/index.ts`、`src/reasoning-reset/index.ts`、`src/claude-skills/index.ts`、`src/restart/index.ts`、`src/mobile/index.ts`、`src/official-features/index.ts` | `dist/<name>.mjs` |
 | 浏览器 | `src/client/index.ts` | `dist/client.js` |
 
 - 宿主构建用对象形式的 `entry`，产物名与 `package.json` 的 `exports` 子路径一一对应。

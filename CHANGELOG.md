@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `official-features` 行「管理官方功能」：Plugins 页的行配置页里五个功能各一行开关（自动化任务、goal、task、plan、present）
+- 开关同时作用于宿主行、界面行与全部 preset 声明的对应子行；宿主行按施加前的原值恢复，preset 按基线重算
+- 关闭记录存在宿主存储域 `practical_tool_official_features`，不写 profile 配置；本行停用即撤销全部施加
+- 订阅 `app-boot/config-reload`，配置重组后按记录重新施加
+- 路由 `GET`/`POST /api/dsh-practical-tools/official-features`
+- 根行状态路由增加 `officialFeatures` 项，前端新增一块面板界面
+
 ## 1.0.0
 
 ### Added

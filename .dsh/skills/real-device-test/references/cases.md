@@ -16,7 +16,7 @@
    - 前端槽位、计算样式与页面标记。
    - 宿主服务调用，例如 `loader`、`workspaceRegistry`、`webServer`、`skills`。
 2. 按四类落用例：
-   - A 装载：根行与五行是否激活，状态路由是否如实回答。
+   - A 装载：根行与六行是否激活，状态路由是否如实回答。
    - B 后端：各功能路由的回答与错误分支。
    - C 前端：侧栏按钮、悬停样式、手机断点。
    - D 漂移：宿主条目 id、`FiberState` 数值、路由认证围栏。
@@ -30,9 +30,9 @@
 
 | 编号 | 驱动 | 断言 |
 | --- | --- | --- |
-| A1 | `run-test.mjs` | 根行与五行的 loader 条目存在，入口模块名正确，`disabled === false`，`fiber.state === 2` |
+| A1 | `run-test.mjs` | 根行与六行的 loader 条目存在，入口模块名正确，`disabled === false`，`fiber.state === 2` |
 | A2 | `run-test.mjs` | 已安装版本与 `dist/index.mjs` 哈希和仓库一致 |
-| A3 | `browser-test.mjs` | `GET /api/dsh-practical-tools/status` 返回五行布尔值，`rows.sweeper === true` |
+| A3 | `browser-test.mjs` | `GET /api/dsh-practical-tools/status` 返回六行布尔值，`rows.sweeper === true` |
 
 ### B 后端路由
 
@@ -75,7 +75,7 @@ B2 只提交空 id 列表。清理会永久删除已归档会话，实机只在�
 
 每次实机至少做一次，步骤固定：
 
-1. 记录 GUI 进程号，确认根行与五行已激活。
+1. 记录 GUI 进程号，确认根行与六行已激活。
 2. 修改 `src/client/locales.ts` 中 `action.label` 的文本。
 3. 运行 `pnpm build`，等待宿主替换与前端轮询完成。
 4. 在 GUI 中确认侧栏按钮的 `aria-label` 变为新文本。

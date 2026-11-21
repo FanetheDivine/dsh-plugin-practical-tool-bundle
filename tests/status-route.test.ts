@@ -54,7 +54,7 @@ function makeWebCtx(
 }
 
 describe('状态路由', () => {
-  it('注册 GET /status 并回答五行状态', async () => {
+  it('注册 GET /status 并回答六行状态', async () => {
     const { ctx, registrations } = makeWebCtx({
       loaderEntries: [
         { id: 'session-sweeper', disabled: false, fiber: { state: 2 } },
@@ -79,6 +79,7 @@ describe('状态路由', () => {
       claudeSkills: false,
       restart: false,
       mobile: false,
+      officialFeatures: false,
     });
   });
 
@@ -93,6 +94,7 @@ describe('状态路由', () => {
       claudeSkills: null,
       restart: null,
       mobile: null,
+      officialFeatures: null,
     });
   });
 });

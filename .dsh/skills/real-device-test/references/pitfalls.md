@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | loader 中按行 id 找不到条目 | bundle 行带组路径前缀，例如 `include:session-sweeper` | 先按完整 id 查，再按 `:${行 id}` 后缀匹配 |
 | `entry.fiber.state` 判断失效 | `FiberState` 是 `const enum`，运行时没有值 | 按序号：`2` 已激活，`3` 加载失败 |
-| 状态路由五行都是 `null` | 宿主 loader 服务不可用 | 确认 `ctx.get('loader')`；前端对 `null` 保持当前界面 |
+| 状态路由六行都是 `null` | 宿主 loader 服务不可用 | 确认 `ctx.get('loader')`；前端对 `null` 保持当前界面 |
 | 状态路由某行为 `false` | 该行被停用，或 fiber 未进入 ACTIVE | 查 profile 的 `cordis.patch.yml` 与行入口的 `apply` |
 | 工作区报 `missing or foreign unit header`，会话控制器等服务一直等待 | `workspace.json` 的 `version` 写在了顶层 | 写成 `unit: { name: 'workspace', version: 2 }` |
 | GUI 停在「正在加载工作区」 | `workspace.json` 的路径或时间戳格式错误 | `path` 用反斜杠 Windows 路径，时间戳用 ISO 字符串 |

@@ -5,6 +5,8 @@
 import type { Context, Events } from '@deepseek-ai/cordis';
 // Type-only：拉取 loader/volatile-update 等事件声明。
 import type {} from '@deepseek-ai/cordis-plugin-loader';
+// Type-only：拉取 app-boot/config-reload 事件声明。
+import type {} from '@deepseek-ai/dsh-app-boot';
 
 /** 宿主类型。插件内统一从这里导入。 */
 export type { Context, Events };

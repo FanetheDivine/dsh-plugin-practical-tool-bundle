@@ -400,3 +400,54 @@ export function makeConfigFormScope<T>(initial: {
     subscriberCount: () => listeners.size,
   };
 }
+
+/** 一条假 loader 条目：`id`、`disabled`、`fiber` 与 `options` 都可在测试中改动。 */
+export interface FakeLoaderEntry {
+  id: string;
+  disabled: boolean;
+  fiber?: { state: number } | undefined;
+  options?: { name?: string; config?: unknown } | undefined;
+}
+
+/** 一次 `update` 调用。 */
+export interface FakeLoaderUpdate {
+  id: string;
+  options: { disabled?: boolean; config?: unknown };
+}
+
+/** 宿主 loader 的假实现：记录每次 `update`，并就地更新被改的条目。 */
+export interface FakeLoader {
+  entries(): FakeLoaderEntry[];
+  update(id: string, options: { disabled?: boolean; config?: unknown }): Promise<void>;
+  await(): Promise<void>;
+  /** 依次记录的 `update` 调用。 */
+  calls: FakeLoaderUpdate[];
+  /** 按 id 取条目，便于断言最终状态。 */
+  entry(id: string): FakeLoaderEntry | undefined;
+}
+
+/**
+ * 构造假 loader。
+ * `update` 只接受已存在条目的 id，与宿主一致：找不到条目时抛错。
+ * @param entries - 初始条目；测试保留引用可继续读取。
+ */
+export function makeLoader(entries: FakeLoaderEntry[]): FakeLoader {
+  const calls: FakeLoaderUpdate[] = [];
+  const list = entries;
+  return {
+    entries: () => list,
+    calls,
+    async update(id, options) {
+      const target = list.find((item) => item.id === id);
+      if (target === undefined) throw new Error(`loader entry not found: ${id}`);
+      calls.push({ id, options });
+      if (options.disabled !== undefined) target.disabled = options.disabled;
+      if (options.config !== undefined) {
+        target.options = { ...target.options, config: options.config };
+      }
+      target.fiber = { state: options.disabled === true ? 4 : 2 };
+    },
+    async await() {},
+    entry: (id) => list.find((item) => item.id === id),
+  };
+}
