@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Retry on reasoning errors",
+    "description": "When the model provider rejects past reasoning, drops it and retries automatically. Your conversation history stays as it is."
+  }
+}

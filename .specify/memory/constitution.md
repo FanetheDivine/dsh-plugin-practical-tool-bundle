@@ -1,10 +1,10 @@
 <!--
 Sync Impact Report
-- Version change: 2.0.0 → 2.1.0
-- Modified principles: 无原则增删；标题与同步报告随项目更名更新
+- Version change: 2.1.0 → 2.2.0
+- Modified principles: III. 文档结构，README 归属内容改为功能简介与 npm 徽章；II. 进包清单增加 rows
 - Added sections: 无
 - Removed sections: 无
-- 修订理由：仓库从模板转为实际插件 dsh-plugin-practical-tool-bundle，宪章不再以模板自称
+- 修订理由：README 是插件详情页内容，读者是插件用户；安装、配置与路由移到 docs/
 - Follow-up TODOs: 无
 -->
 
@@ -28,7 +28,7 @@ Sync Impact Report
 - 测试 MUST 验证真实行为，不复述默认值或文案。
 - 单元测试 MUST 使用 `tests/helpers.ts` 的模拟 `ctx`。
 - 发布内容 MUST 由 package-pack 测试回归：
-  - 进包：`dist`、`cordis.patch.yml`、`assets`、`locale`、`icon.svg`、`README.md`。
+  - 进包：`dist`、`cordis.patch.yml`、`assets`、`locale`、`rows`、`icon.svg`、`README.md`。
   - 不进包：`src`、`tests`、`scripts`。
 - 涉及宿主装载或真实对话链路的变更 SHOULD 在真实宿主上做端到端验证。
 - `dsh` 版本变更后 MUST 提醒用户执行实机测试，并说明变更的版本号。
@@ -41,10 +41,10 @@ Sync Impact Report
 
 | 文档 | 读者 | 归属内容 |
 | --- | --- | --- |
-| `README.md` | 插件用户 | 功能、安装、配置、路由 |
+| `README.md` | 插件用户 | 功能简介与 npm 徽章 |
 | `AGENTS.md` | 每个会话的 Agent | 通用的信息和指令 |
 | 本宪章 | 执行 Spec Kit 流程的 Agent 与维护者 | 变更过程中必须遵循的硬约束 |
-| `docs/` | 开发者 | 工作机制、已知风险、开发说明 |
+| `docs/` | 开发者 | 工作机制、路由、已知风险、开发说明 |
 | 代码注释 | 读代码的人 | 文件职责、函数与常量用途 |
 
 引用规则：
@@ -55,11 +55,10 @@ Sync Impact Report
   - 链接及其一句话锚文本。
   - `AGENTS.md` 文档索引中的条目说明。
   - 代码注释中与该代码相关的一句理由。
-- `README.md` 省略实现细节。
 
 同步要求：
 
-- 用户可见行为变化 MUST 更新 `README.md`。
+- 用户可见行为变化 MUST 更新 `README.md` 与 `locale/`、`rows/` 下的元数据。
 - 机制、风险、流程或文件结构变化 MUST 更新对应的归属文档。
 - CHANGELOG MUST 按分支规则维护：
   - `main` 上每个 commit 都增加条目。
@@ -121,4 +120,4 @@ Sync Impact Report
   - PATCH：措辞澄清。
 - `/speckit-plan` 的 Constitution Check 与 `/speckit-analyze` MUST 逐条核对本宪章。
 
-**Version**: 2.1.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-21
+**Version**: 2.2.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-21

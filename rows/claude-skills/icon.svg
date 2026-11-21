@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img">
+  <title>Project Claude skills</title>
+  <path d="M6 3.5h7l4.5 4.5v12.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z" />
+  <path d="M13 3.6V8h4.4" />
+  <path d="M8.6 12.2h4.2" />
+  <path d="M8.6 15.6h6.2" />
+  <path d="m17.6 12.9.62 1.58 1.58.62-1.58.62-.62 1.58-.62-1.58-1.58-.62 1.58-.62z" fill="#0f766e" stroke="none" />
+</svg>

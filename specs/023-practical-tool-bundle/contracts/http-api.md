@@ -68,8 +68,10 @@
 重启行提供。
 
 - 已受理：200 `{ "ok": true, "pid": 1234, "startedAt": 1700000000000, "logPath": "...", "runtime": "web" }`。
-- 重复请求：409 `{ "ok": false, "error": "a restart has already been requested" }`。
-- 无法生成计划或拉起：500 `{ "ok": false, "error": "..." }`。
+- 失败回答形状为 `{ "ok": false, "error": "<错误码>", "message": "<原始说明>" }`；前端按 `error` 选择文案。
+- 重复请求：409，`error` 为 `restart-pending`。
+- 桌面启动器未能启动：500，`error` 为 `helper-failed`，附 `logPath`。
+- 无法生成计划或拉起：500，`error` 为 `restart-failed`。
 - 网页场景受理后约 600ms 退出当前进程；桌面场景由外部脚本关闭应用并重新启动。
 
 ## GET /api/dsh-practical-tools/mobile.css

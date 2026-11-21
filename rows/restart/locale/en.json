@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Restart button",
+    "description": "Adds a restart button at the bottom of the sidebar. Restarts the service on the web and the app on desktop."
+  }
+}

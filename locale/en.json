@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "DSH Practical Tool Bundle",
-    "description": "Six rows: sweep sessions from the sidebar (archive unpinned sessions, then delete archived logs), reset rejected reasoning blocks and retry, merge a project's .claude/skills read-only, restart the service or the desktop app, enlarge touch controls at 767px or below, and switch official features (schedule, goal, task, plan, present) from one panel."
+    "title": "DSH practical tool bundle",
+    "description": "Six tools you can turn on one by one: sweep sessions, retry on reasoning errors, project Claude skills, a restart button, larger touch targets on phones, and official feature switches."
   }
 }

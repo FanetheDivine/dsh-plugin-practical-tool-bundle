@@ -167,6 +167,7 @@ assets/
 └── mobile.css              # 手机样式表
 icon.svg                    # 插件图标
 locale/                     # 插件元数据资源，规范见 i18n.md
+rows/<子路径>/              # 功能行的元数据与图标，规范见 i18n.md
 src/
 ├── index.ts                # 根行：状态路由
 ├── rows.ts                 # 行 id 与路由常量

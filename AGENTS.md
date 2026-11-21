@@ -1,17 +1,17 @@
 # 项目说明
 
-DSH 插件 `dsh-plugin-practical-tool-bundle`（中文标题「dsh使用工具组合包」）。一个包内的六行：清理会话、清理推理块、Claude 技能、重启按钮、手机触控放大、管理官方功能。
+DSH 插件 `dsh-plugin-practical-tool-bundle`（中文标题「DSH实用工具组合包」）。一个包内的六行：一键清理会话、推理报错自动重试、加载项目 Claude 技能、重启按钮、手机大按钮、官方功能开关。
 
 - 常用 pnpm 脚本：`dev`、`build`、`check`、`full-check`、`release`、`test:code`、`test:dist`、`lint`、`lint:fix`、`format`。
 - 命令说明见 [development.md](./docs/development.md#命令)。
 
 # 文档索引
 
-- [README.md](./README.md) 了解功能、安装与路由。
+- [README.md](./README.md)：面向用户的功能简介。
 - [how-it-works.md](./docs/how-it-works.md)：行结构、路由与前端装卸。
 - [known-risks.md](./docs/known-risks.md)：已知风险与宿主限制。
 - [development.md](./docs/development.md)：本地开发、命令、测试与文件地图。
-- [i18n.md](./docs/i18n.md)：插件元数据与前端字典的国际化规范。
+- [i18n.md](./docs/i18n.md)：插件与行元数据、前端字典的国际化规范。
 
 # 主工作区
 

@@ -30,12 +30,29 @@ export const DUPLICATE_WINDOW = 15000;
 /** 桌面启动器的握手超时。 */
 const HELPER_TIMEOUT = 4000;
 
-/** 重复请求的错误文案，与 HTTP 契约一致。 */
-const DUPLICATE_ERROR = 'a restart has already been requested';
+/** 重启路由的错误码，前端据此选择本地化文案。 */
+export type RestartErrorCode = 'restart-pending' | 'helper-failed' | 'restart-failed';
 
-/** 桌面启动器未能启动的错误文案。 */
-const HELPER_ERROR =
+/** 重复请求的说明，放在 message 字段。 */
+const DUPLICATE_MESSAGE = 'a restart has already been requested';
+
+/** 桌面启动器未能启动的说明，放在 message 字段。 */
+const HELPER_MESSAGE =
   'the restart helper could not be started (Windows Script Host or explorer.exe may be unavailable)';
+
+/**
+ * 组装失败回答：错误码加原始说明。
+ * @param error - 错误码。
+ * @param message - 原始英文说明。
+ * @param extra - 其他字段，例如日志路径。
+ */
+function failure(
+  error: RestartErrorCode,
+  message: string,
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return { ok: false, error, message, ...extra };
+}
 
 /** 宿主 connection 服务里本行用到的部分。 */
 export interface ConnectionLike {
@@ -324,14 +341,14 @@ async function restartDesktop(
   try {
     plan = desktopRestartPlan(webServer);
   } catch (error) {
-    return jsonResponse({ ok: false, error: messageOf(error) }, 500);
+    return jsonResponse(failure('restart-failed', messageOf(error)), 500);
   }
   state.desktopRequestedAt = now();
   try {
     startDesktopHelper(plan);
   } catch (error) {
     state.desktopRequestedAt = 0;
-    return jsonResponse({ ok: false, error: messageOf(error), logPath: plan.logPath }, 500);
+    return jsonResponse(failure('helper-failed', messageOf(error), { logPath: plan.logPath }), 500);
   }
   if (!(await waitForHelper(plan.stateDir, HELPER_TIMEOUT))) {
     // 助手停止任何东西之前会检查这个标记，晚启动的助手不会关掉已拒绝的页面。
@@ -342,7 +359,7 @@ async function restartDesktop(
     }
     state.desktopRequestedAt = 0;
     return jsonResponse(
-      { ok: false, error: HELPER_ERROR, logPath: plan.logPath, runtime: 'desktop' },
+      failure('helper-failed', HELPER_MESSAGE, { logPath: plan.logPath, runtime: 'desktop' }),
       500,
     );
   }
@@ -393,25 +410,25 @@ export function registerRestartRoutes(
       fetch: async () => {
         if (desktop) {
           if (isDuplicateRequest(state, true, now())) {
-            return jsonResponse({ ok: false, error: DUPLICATE_ERROR }, 409);
+            return jsonResponse(failure('restart-pending', DUPLICATE_MESSAGE), 409);
           }
           return restartDesktop(webServer, state, now);
         }
         if (isDuplicateRequest(state, false)) {
-          return jsonResponse({ ok: false, error: DUPLICATE_ERROR }, 409);
+          return jsonResponse(failure('restart-pending', DUPLICATE_MESSAGE), 409);
         }
         let plan: RestartPlan;
         try {
           plan = buildPlan(webServer);
         } catch (error) {
-          return jsonResponse({ ok: false, error: messageOf(error) }, 500);
+          return jsonResponse(failure('restart-failed', messageOf(error)), 500);
         }
         state.requested = true;
         try {
           startLauncher(plan);
         } catch (error) {
           state.requested = false;
-          return jsonResponse({ ok: false, error: messageOf(error) }, 500);
+          return jsonResponse(failure('restart-failed', messageOf(error)), 500);
         }
         // 让响应先离开；启动器已 detached，并等待当前 pid 消失。
         scheduleExit(EXIT_DELAY, () => process.exit(0));

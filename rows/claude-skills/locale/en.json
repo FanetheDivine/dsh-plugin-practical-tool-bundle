@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Project Claude skills",
+    "description": "Sessions load the skills in the project's .claude/skills folder. Files are only read."
+  }
+}
