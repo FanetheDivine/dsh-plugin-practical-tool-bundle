@@ -154,6 +154,12 @@ export function createSweepHandler(
       }
     }
 
+    // 归档会通知前端释放会话；删除阶段再查内存可能已经查不到，先按请求发起时的状态建档。
+    const liveAtStart = new Set<string>();
+    for (const id of new Set(requested)) {
+      if (isLive(ctx, id)) liveAtStart.add(id);
+    }
+
     const archived: string[] = [];
     for (const id of new Set(requested)) {
       // 页面仍在显示的会话先跳过；其余空闲会话交给 registry 判断是否活跃。
@@ -193,8 +199,8 @@ export function createSweepHandler(
         skipped.add(id);
         continue;
       }
-      // Session store 仍持有这个空闲会话：日志保留到宿主下次启动。
-      if (isLive(ctx, id)) {
+      // Session store 仍持有这个空闲会话，或清理开始时就持有它：日志留到宿主释放后再删。
+      if (isLive(ctx, id) || liveAtStart.has(id)) {
         deferred.add(id);
         continue;
       }

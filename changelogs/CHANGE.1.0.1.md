@@ -13,6 +13,11 @@
 - 路由 `GET`/`POST /api/dsh-practical-tools/official-features`
 - 根行状态路由增加 `officialFeatures` 项，前端新增一块面板界面
 
+### Fixed
+
+- 清理会话不再归档和删除打开中的会话：会话列表改读 `ctx.sessions.list`，此前服务结构读错使 `keepIds` 恒为空
+- 打开 subagent 时保护它的全部祖先会话；宿主对同一请求内刚归档的会话按延后处理，不再删除日志
+
 ### Changed
 
 - 插件标题改为「DSH实用工具组合包」，英文 `DSH practical tool bundle`；描述按用户视角重写

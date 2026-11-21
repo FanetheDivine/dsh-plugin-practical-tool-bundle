@@ -92,9 +92,11 @@
 
 ### 清理会话
 
-- 面板从 Workspace 与 Session store 读取数量：未置顶且未归档的会话数、已归档且仍有日志的会话数。
+- 面板从 Workspace 与会话列表读取数量：未置顶、未归档且未受保护的会话数，已归档且仍有日志的会话数。
+- 会话列表读自 `ctx.sessions.list`；`ctx.sessions` 是服务本身，列表挂在它的 `list` 上。
 - 清理分两阶段：`workspaceRegistry.archiveSession(id)` 逐个归档，然后遍历已归档集合并删除 `sessions/<cwd key>/<session id>` 目录。
-- `keepIds` 是页面正在显示的会话，主机侧永不处理；Session store 仍持有的已归档会话计入 `deferred`，日志留到宿主释放后再删。
+- `keepIds` 是受保护的会话，主机侧永不处理：`retainedBy` 中 `mainView`、`sidebarChat`、`sidebarView` 任一大于 0 即为打开，再沿 `parentId` 并入全部祖先。
+- 归档会通知前端释放会话，所以宿主在归档前记录仍在内存的会话，删除阶段把这些会话计入 `deferred`。Session store 在删除时仍持有的会话同样计入 `deferred`，日志留到宿主释放后再删。
 - 删除是永久的，所以按钮需要两次点击确认。
 
 ### 清理推理块
