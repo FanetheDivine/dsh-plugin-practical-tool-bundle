@@ -1,6 +1,6 @@
-# 本包由一行根行与五行功能行组成：根行提供前端产物与聚合状态路由，五行分别提供
-# 清理会话、清理推理块、Claude 技能、重启按钮与手机触控放大。停用任一行只下线该行
-# 的路由或 provider，其余行照常运行；前端从根行的状态路由得知哪些行可用。
+# 本包由一行根行与六行功能行组成：根行提供前端产物与聚合状态路由，六行分别提供
+# 清理会话、清理推理块、Claude 技能、重启按钮、手机触控放大与管理官方功能。停用任一行
+# 只下线该行的路由或 provider，其余行照常运行；前端从根行的状态路由得知哪些行可用。
 # Declaration only; no global/host configuration is touched.
 - insert:
     # 根行：携带浏览器半部与 GET /api/dsh-practical-tools/status。
@@ -21,3 +21,6 @@
     # 手机触控放大：≤767px 生效的样式表路由。
     - id: mobile-touch-ui
       name: dsh-plugin-practical-tool-bundle/mobile
+    # 管理官方功能：面板、功能状态路由，与在运行期开关官方行和 preset 子行。
+    - id: official-features
+      name: dsh-plugin-practical-tool-bundle/official-features

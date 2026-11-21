@@ -1,4 +1,4 @@
-// 行状态测试：读 loader 条目判断五行是否可用，覆盖禁用、fiber 状态与 loader 缺失。
+// 行状态测试：读 loader 条目判断六个功能行是否可用，覆盖禁用、fiber 状态与 loader 缺失。
 import { describe, expect, it } from 'vitest';
 
 import { type LoaderEntryLike, readRowStatus } from '../src/row-status.ts';
@@ -27,6 +27,7 @@ describe('readRowStatus', () => {
         entry('claude-skills', { state: 2 }),
         entry('restart-button', { state: 2 }),
         entry('mobile-touch-ui', { state: 2 }),
+        entry('official-features', { state: 2 }),
       ]),
     );
     expect(status).toEqual({
@@ -35,6 +36,7 @@ describe('readRowStatus', () => {
       claudeSkills: true,
       restart: true,
       mobile: true,
+      officialFeatures: true,
     });
   });
 
@@ -44,9 +46,11 @@ describe('readRowStatus', () => {
         entry('session-sweeper', { disabled: true, state: 2 }),
         entry('restart-button', { state: 1 }),
         entry('mobile-touch-ui'),
+        entry('official-features', { state: 0 }),
         // claude-skills 与 reasoning-reset 不在条目的树上
       ]),
     );
+    expect(status.officialFeatures).toBe(false);
     expect(status.sweeper).toBe(false);
     expect(status.restart).toBe(false);
     expect(status.mobile).toBe(false);
@@ -54,13 +58,14 @@ describe('readRowStatus', () => {
     expect(status.reasoningReset).toBe(false);
   });
 
-  it('loader 缺失时五项都是 null', () => {
+  it('loader 缺失时六项都是 null', () => {
     expect(readRowStatus(undefined)).toEqual({
       sweeper: null,
       reasoningReset: null,
       claudeSkills: null,
       restart: null,
       mobile: null,
+      officialFeatures: null,
     });
   });
 });

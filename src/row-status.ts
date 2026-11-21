@@ -1,5 +1,5 @@
 /**
- * 行状态：从宿主 loader 的条目树上判断五行是否可用。
+ * 行状态：从宿主 loader 的条目树上判断六个功能行是否可用。
  * 只读取条目的 `disabled` 与 fiber 状态，不修改 loader。
  */
 import { ROW_NAME_TO_ID, type RowName } from './rows.ts';
@@ -39,8 +39,8 @@ function isAvailable(entry: LoaderEntryLike | undefined): boolean {
 }
 
 /**
- * 汇总五行状态。
- * @param loader - 宿主 loader；缺失时五项都是 `null`。
+ * 汇总六行状态。
+ * @param loader - 宿主 loader；缺失时六项都是 `null`。
  */
 export function readRowStatus(loader: LoaderLike | undefined): RowStatus {
   if (loader === undefined) {
@@ -50,6 +50,7 @@ export function readRowStatus(loader: LoaderLike | undefined): RowStatus {
       claudeSkills: null,
       restart: null,
       mobile: null,
+      officialFeatures: null,
     };
   }
   const byId = new Map<string, LoaderEntryLike>();
@@ -71,5 +72,6 @@ export function readRowStatus(loader: LoaderLike | undefined): RowStatus {
     claudeSkills: at('claudeSkills'),
     restart: at('restart'),
     mobile: at('mobile'),
+    officialFeatures: at('officialFeatures'),
   };
 }

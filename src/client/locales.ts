@@ -1,5 +1,5 @@
 /**
- * 前端字典与命名空间：清理会话、重启按钮与手机样式的全部文案。
+ * 前端字典与命名空间：清理会话、重启按钮、手机样式与管理官方功能的全部文案。
  * 导出 NS、zh、en；中文字典是键集事实源。
  */
 
@@ -54,6 +54,19 @@ export const zh = {
     '已等待 {seconds} 秒。若窗口没有自行出现，请从开始菜单重新打开 DeepSeek Harness，日志里有完整的关闭与启动记录。',
   'restart.desktopStale':
     '当前应用仍在使用旧版 Host，按钮会在下次启动后生效。请先退出并重新打开 DeepSeek Harness 一次。',
+  'officialFeatures.title': '管理官方功能',
+  'officialFeatures.hint':
+    '开关显示功能当前是否可用。关闭后新建会话不再提供该功能，已排定的任务与既有数据保留。',
+  'officialFeatures.summary': '五项官方功能的开关',
+  'officialFeatures.busy': '处理中…',
+  'officialFeatures.failed': '切换失败：{message}',
+  'officialFeatures.retry': '重试',
+  'officialFeatures.unavailable': '宿主没有提供功能状态',
+  'officialFeatures.feature.schedule': '自动化任务（schedule）',
+  'officialFeatures.feature.goal': '目标（goal）',
+  'officialFeatures.feature.task': '任务清单（task）',
+  'officialFeatures.feature.plan': '计划模式（plan）',
+  'officialFeatures.feature.present': '交付文件（present）',
 } as const;
 
 /** 英文字典，键集与中文一致。 */
@@ -106,6 +119,19 @@ export const en: Record<PracticalToolKey, string> = {
     'Waited {seconds}s. If the window does not appear, open DeepSeek Harness from the Start menu; the log records the whole stop and start.',
   'restart.desktopStale':
     'This app instance still runs the previous Host. Quit and reopen DeepSeek Harness once; the button takes effect from the next launch.',
+  'officialFeatures.title': 'Official features',
+  'officialFeatures.hint':
+    'The switch shows whether the feature is available now. Turning one off stops new sessions from offering it; scheduled tasks and existing data are kept.',
+  'officialFeatures.summary': 'Switches for five official features',
+  'officialFeatures.busy': 'Working…',
+  'officialFeatures.failed': 'Switch failed: {message}',
+  'officialFeatures.retry': 'Retry',
+  'officialFeatures.unavailable': 'The host reports no feature state',
+  'officialFeatures.feature.schedule': 'Schedule',
+  'officialFeatures.feature.goal': 'Goal',
+  'officialFeatures.feature.task': 'Task list',
+  'officialFeatures.feature.plan': 'Plan mode',
+  'officialFeatures.feature.present': 'Present files',
 };
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {

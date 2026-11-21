@@ -1,6 +1,6 @@
 /**
  * 根行：提供聚合状态路由，前端据此决定挂载哪些界面块。
- * 五行功能各自是一个 loader 行，本行不实现它们。
+ * 六行功能各自是一个 loader 行，本行不实现它们。
  */
 
 import { type LoaderLike, readRowStatus } from './row-status.ts';

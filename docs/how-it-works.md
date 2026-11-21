@@ -2,7 +2,7 @@
 
 ## 包结构
 
-一个 npm 包承载五行。宿主按 `cordis.patch.yml` 的 `name` 分别 import 各入口。
+一个 npm 包承载六行。宿主按 `cordis.patch.yml` 的 `name` 分别 import 各入口。
 
 | 入口 | 行 id | 作用 |
 | --- | --- | --- |
@@ -12,7 +12,8 @@
 | `dist/claude-skills.mjs` | `claude-skills` | 注册项目 `.claude/skills` 技能来源 |
 | `dist/restart.mjs` | `restart-button` | 重启路由 |
 | `dist/mobile.mjs` | `mobile-touch-ui` | 手机样式表路由 |
-| `dist/client.js` | 随根行 | 浏览器半部：三块界面与状态轮询 |
+| `dist/official-features.mjs` | `official-features` | 官方功能状态路由与运行期开关 |
+| `dist/client.js` | 随根行 | 浏览器半部：四块界面与状态轮询 |
 
 `assets/launcher.cjs` 由重启行以 detached 进程启动，`assets/mobile.css` 由手机样式行读取。两者用 `new URL('../assets/...', import.meta.url)` 定位，因此必须随包发布。
 
@@ -22,11 +23,13 @@
 
 | 路由 | 行 | 说明 |
 | --- | --- | --- |
-| `GET /status` | 根行 | 五行是否可用 |
+| `GET /status` | 根行 | 六行是否可用 |
 | `POST /sweep` | `session-sweeper` | 归档未置顶会话并删除已归档日志 |
 | `GET /restart/info` | `restart-button` | 当前进程标识与运行形态 |
 | `POST /restart` | `restart-button` | 重启服务或应用 |
 | `GET /mobile.css` | `mobile-touch-ui` | 手机样式表 |
+| `GET /official-features` | `official-features` | 五项官方功能的开关状态 |
+| `POST /official-features` | `official-features` | 打开或关闭一个官方功能 |
 
 路由注册用 `ctx.inject(['connection'], ...)` 加 `ctx.effect`，行被停用时注册随 fiber 释放。启动器与代次判断另需 `webServer`。
 
@@ -37,9 +40,53 @@
 - `GET /status` 每次请求读取 `ctx.get('loader')`，用 `loader.entries()` 按行 id 找到条目，判断 `disabled` 与 fiber 是否处于 ACTIVE。
 - 运行时条目 id 带组路径前缀，bundle 行是 `include:<行 id>`；查找先按完整 id，再按最后一段匹配。
 - `FiberState` 在 cordis 中是 `const enum`，运行时没有值，代码按序号 2 比较。
-- loader 不可用时五项都回答 `null`；前端对 `null` 保持当前界面。
+- loader 不可用时六项都回答 `null`；前端对 `null` 保持当前界面。
 - 前端每 3 秒轮询一次，且只在页面可见时轮询；`visibilitychange` 与 `focus` 会立即补一次。
 - 每个界面块是一个子插件：启用时 `ctx.plugin()` 挂载，停用时 `fiber.dispose()` 卸载，槽位注册与样式随 fiber 回收，不需要刷新页面。
+
+## 官方功能管理
+
+官方能力在宿主里分散在三处：宿主配置中的行、每个 preset 声明里的子行、以及界面行。Web 面把多数宿主行停用，改由 preset 的 `config.plugins` 挂载，所以只改宿主行不影响会话能力。
+
+### 受管行
+
+| 功能 | 宿主行 | preset 子行模块名 |
+| --- | --- | --- |
+| `schedule` | `schedule`、`ui-schedule` | `@deepseek-ai/dsh-tool-schedule` |
+| `goal` | `goal`、`goal-round-driver`、`ui-goal` | `@deepseek-ai/dsh-command-goal`、`@deepseek-ai/dsh-tool-goal` |
+| `task` | `tool-todo` | `@deepseek-ai/dsh-tool-todo` |
+| `plan` | `plan-mode`、`ui-plan` | `@deepseek-ai/dsh-plan-mode` |
+| `present` | `deliverable-file-references` | `@deepseek-ai/dsh-tool-present` |
+
+- `ui-user-questions` 同时是提问界面，不列入 `plan`。
+- `ui-deliverables` 是变更文件卡片，不列入 `present`。
+- preset 子行按模块名匹配，因此用户改过行 id 或新建 preset 时仍然有效。
+
+### 施加
+
+- 宿主行：`loader.update(entryId, { disabled: true })`，打开时按施加前保存的原值放回，本来就停用的行不强制启用。
+- preset 声明：枚举 `options.name === '@deepseek-ai/dsh-agent-preset'` 的全部条目，按「当前关闭的功能」从基线重算 `config.plugins` 后整体 `loader.update`。只摘受管子行，空组一并移除。
+- 过程不写 `cordis.yml`、`cordis.patch.yml` 与 `package.json`；这一点由真机实测确认。
+
+### 撤销与重组
+
+- 运行期改动是易失的：任何一次配置重组都会把树还原成文件状态。
+- 因此订阅 `app-boot/config-reload`，事件后丢弃 preset 基线、按记录重新施加。本包自己的 `update` 不触发该事件，不会循环。
+- 本行停用时执行 `ctx.effect` 的清理：宿主行按快照放回原值，preset 按基线还原，然后关闭存储域。
+- 关闭记录留在存储域里，重新启用时据此再次施加。
+
+### 关闭记录
+
+- 域名为 `practical_tool_official_features`，只用一个 `global` 单例，内容是 `{ version: 1, off: [...] }`。
+- 落在 `$DSH_HOME/storages/practical_tool_official_features.json`，不触碰 profile。
+- 存储域写入不在写入时校验，因此每次写入都会带上完整对象；读取端按 schema 校验，文件被改坏时按无记录运行并记录警告，不覆盖原文件。
+
+### 状态判定
+
+- 宿主行：存在、未停用、fiber 处于 ACTIVE 或 LOADING。
+- preset 子行：任一 preset 声明的 `config.plugins` 递归包含该模块名，且该子行的 `disabled` 不是字面 `true`。
+- 任一项启用即为开。这是因为 Web 面本来停用的宿主行不该把功能判成关。
+- 切换后宿主行立即变化，preset 只影响之后新建的会话；面板在 2 秒内重读真实状态。
 
 ## 各功能机制
 

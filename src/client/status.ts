@@ -1,10 +1,11 @@
 /**
- * 行开关：轮询根行的状态路由，按结果装卸三个界面块。
+ * 行开关：轮询根行的状态路由，按结果装卸四个界面块。
  * 导出 startRowWatch；返回的函数在插件卸载时清掉定时器与已挂载的块。
  */
 import type { Context, Fiber } from '@deepseek-ai/cordis';
 
 import { installMobile } from './mobile.ts';
+import { installOfficialFeatures } from './official-features.tsx';
 import { installRestart } from './restart.tsx';
 import { installSweeper } from './sweeper.tsx';
 
@@ -22,8 +23,8 @@ interface StatusPayload {
   readonly rows?: Partial<Record<ChunkKey, Availability>>;
 }
 
-/** 三个界面块的键，与状态路由一致。 */
-type ChunkKey = 'sweeper' | 'restart' | 'mobile';
+/** 四个界面块的键，与状态路由一致。 */
+type ChunkKey = 'sweeper' | 'restart' | 'mobile' | 'officialFeatures';
 
 /** 一个界面块：挂载时把它的槽位注册交给子插件。 */
 interface Chunk {
@@ -36,6 +37,7 @@ const CHUNKS: readonly Chunk[] = [
   { key: 'sweeper', install: installSweeper },
   { key: 'restart', install: installRestart },
   { key: 'mobile', install: installMobile },
+  { key: 'officialFeatures', install: installOfficialFeatures },
 ];
 
 /** 同源读取状态路由；任何失败都返回 undefined，表示本轮无法判断。 */
