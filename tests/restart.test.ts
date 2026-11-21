@@ -197,7 +197,8 @@ describe('重启路由', () => {
     expect(duplicate.status).toBe(409);
     expect(await jsonOf(duplicate)).toEqual({
       ok: false,
-      error: 'a restart has already been requested',
+      error: 'restart-pending',
+      message: 'a restart has already been requested',
     });
     expect(startLauncher).toHaveBeenCalledTimes(1);
     dispose();
@@ -217,7 +218,11 @@ describe('重启路由', () => {
 
     const response = await routeOf(routes, RESTART_ACTION_PATH).fetch();
     expect(response.status).toBe(500);
-    expect(await jsonOf(response)).toEqual({ ok: false, error: 'no entry script' });
+    expect(await jsonOf(response)).toEqual({
+      ok: false,
+      error: 'restart-failed',
+      message: 'no entry script',
+    });
     expect(startLauncher).not.toHaveBeenCalled();
   });
 
@@ -246,7 +251,11 @@ describe('重启路由', () => {
 
     const failed = await restart.fetch();
     expect(failed.status).toBe(500);
-    expect(await jsonOf(failed)).toEqual({ ok: false, error: 'spawn failed' });
+    expect(await jsonOf(failed)).toEqual({
+      ok: false,
+      error: 'restart-failed',
+      message: 'spawn failed',
+    });
 
     const retried = await restart.fetch();
     expect(retried.status).toBe(200);

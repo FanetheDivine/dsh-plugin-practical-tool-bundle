@@ -1,6 +1,6 @@
 /**
- * 管理官方功能面板：五个功能各一行加一个开关，状态取自宿主路由。
- * 导出 installOfficialFeatures 与 OfficialFeaturesPanel；文案由槽位注入的 t 提供。
+ * 官方功能开关面板：五个功能各一行，含说明与开关，状态取自宿主路由。
+ * 导出 installOfficialFeatures、OfficialFeaturesPanel 与纯展示组件 FeaturesView；文案由槽位注入的 t 提供。
  */
 import type { Context } from '@deepseek-ai/cordis';
 // Type-only：拉取 plugins.row.config 槽位声明与其 owner props。
@@ -56,6 +56,55 @@ const LABEL_KEY: Readonly<Record<string, PracticalToolKey>> = {
   present: 'officialFeatures.feature.present',
 };
 
+/** 功能关闭后果说明的字典键。 */
+const DETAIL_KEY: Readonly<Record<string, PracticalToolKey>> = {
+  schedule: 'officialFeatures.detail.schedule',
+  goal: 'officialFeatures.detail.goal',
+  task: 'officialFeatures.detail.task',
+  plan: 'officialFeatures.detail.plan',
+  present: 'officialFeatures.detail.present',
+};
+
+/** 路由错误码到文案键；未列出的值用通用文案。 */
+const ERROR_KEY: Readonly<Record<string, PracticalToolKey>> = {
+  'store-failed': 'officialFeatures.error.store',
+  'apply-failed': 'officialFeatures.error.apply',
+};
+
+/**
+ * 切换失败时显示的文案键。
+ * @param code - 路由返回的错误码；网络失败时为 undefined。
+ */
+export function errorKey(code: string | undefined): PracticalToolKey {
+  return (code === undefined ? undefined : ERROR_KEY[code]) ?? 'officialFeatures.error.unknown';
+}
+
+/** 面板的三种显示状态。 */
+export type PanelState = 'loading' | 'failed' | 'ready';
+
+/**
+ * 按已知状态与读取结果决定面板显示。
+ * 已有状态时单次读取失败保持当前显示。
+ * @param rows - 已知的功能状态。
+ * @param loadFailed - 最近一次读取是否失败。
+ */
+export function panelState(rows: FeatureRow[] | null, loadFailed: boolean): PanelState {
+  if (rows !== null) return 'ready';
+  return loadFailed ? 'failed' : 'loading';
+}
+
+/** 路由失败时抛出的错误，携带错误码。 */
+export class FeaturesError extends Error {
+  /** 路由返回的错误码；网络或解析失败时为 undefined。 */
+  readonly code: string | undefined;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'FeaturesError';
+    this.code = code;
+  }
+}
+
 /** 面板属性：页面视图与文案座。 */
 export interface OfficialFeaturesPanelProps extends PluginConfigViewProps {
   readonly t: TranslateNS<typeof NS>;
@@ -69,9 +118,9 @@ async function request(url: string, init?: RequestInit): Promise<FeaturesPayload
     ...init,
   });
   const payload = (await response.json().catch(() => null)) as FeaturesPayload | null;
-  if (payload === null) throw new Error(`HTTP ${response.status}`);
+  if (payload === null) throw new FeaturesError(`HTTP ${response.status}`);
   if (!response.ok || payload.ok === false) {
-    throw new Error(payload.message ?? payload.error ?? `HTTP ${response.status}`);
+    throw new FeaturesError(payload.message ?? `HTTP ${response.status}`, payload.error);
   }
   return payload;
 }
@@ -142,7 +191,7 @@ export async function toggleAndSettle(
   }
 }
 
-/** 一行：功能名与开关。 */
+/** 一行：功能名、关闭后果说明与开关。 */
 function FeatureSwitch({
   row,
   t,
@@ -155,9 +204,13 @@ function FeatureSwitch({
   onToggle(id: string, enabled: boolean): void;
 }) {
   const label = t(LABEL_KEY[row.id] ?? 'officialFeatures.title');
+  const detailKey = DETAIL_KEY[row.id];
   return (
     <div style={styles.row}>
-      <span style={styles.label}>{label}</span>
+      <div style={styles.text}>
+        <span style={styles.label}>{label}</span>
+        {detailKey === undefined ? null : <span style={styles.detail}>{t(detailKey)}</span>}
+      </div>
       <button
         type="button"
         role="switch"
@@ -183,7 +236,7 @@ export function OfficialFeaturesPanel({
   return <FeaturesBody t={t} api={api} />;
 }
 
-/** 面板主体；单独导出以便测试直接渲染。 */
+/** 面板主体：读取与切换状态，交给 {@link FeaturesView} 渲染。 */
 export function FeaturesBody({
   t,
   api = defaultFeaturesApi,
@@ -192,18 +245,24 @@ export function FeaturesBody({
   api?: FeaturesApi;
 }) {
   const [rows, setRows] = useState<FeatureRow[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<PracticalToolKey | null>(null);
   const live = useRef(true);
 
-  /** 读一次状态；取不到结论时保持当前显示。 */
+  /** 读一次状态；已有状态时单次失败保持当前显示。 */
   const refresh = useCallback(async () => {
     try {
       const payload = await api.read();
       if (!live.current) return;
-      if (Array.isArray(payload.features)) setRows(payload.features);
+      if (Array.isArray(payload.features)) {
+        setRows(payload.features);
+        setLoadFailed(false);
+      } else {
+        setLoadFailed(true);
+      }
     } catch {
-      // 单次失败保持现状，等下一次轮询。
+      if (live.current) setLoadFailed(true);
     }
   }, [api]);
 
@@ -237,7 +296,7 @@ export function FeaturesBody({
         if (outcome.rows !== null) setRows(outcome.rows);
       } catch (failure) {
         if (!live.current) return;
-        setError(failure instanceof Error ? failure.message : String(failure));
+        setError(errorKey(failure instanceof FeaturesError ? failure.code : undefined));
         await refresh();
       } finally {
         if (live.current) setBusy(false);
@@ -246,11 +305,63 @@ export function FeaturesBody({
     [api, refresh],
   );
 
+  /** 重试只重读真实状态。 */
+  const onRetry = useCallback(async () => {
+    setError(null);
+    await refresh();
+  }, [refresh]);
+
+  return (
+    <FeaturesView
+      t={t}
+      rows={rows}
+      loadFailed={loadFailed}
+      busy={busy}
+      error={error}
+      onToggle={(id, enabled) => void onToggle(id, enabled)}
+      onRetry={() => void onRetry()}
+    />
+  );
+}
+
+/** 展示组件的属性。 */
+export interface FeaturesViewProps {
+  readonly t: TranslateNS<typeof NS>;
+  readonly rows: FeatureRow[] | null;
+  readonly loadFailed: boolean;
+  readonly busy: boolean;
+  /** 切换失败的文案键；没有失败时为 null。 */
+  readonly error: PracticalToolKey | null;
+  onToggle(id: string, enabled: boolean): void;
+  onRetry(): void;
+}
+
+/** 纯展示：提示、加载中或读取失败、五行开关、切换中与切换失败。 */
+export function FeaturesView({
+  t,
+  rows,
+  loadFailed,
+  busy,
+  error,
+  onToggle,
+  onRetry,
+}: FeaturesViewProps) {
+  const state = panelState(rows, loadFailed);
+  const retry = (
+    <button type="button" style={styles.retry} onClick={onRetry}>
+      {t('officialFeatures.retry')}
+    </button>
+  );
   return (
     <div style={styles.panel}>
-      <div style={styles.title}>{t('officialFeatures.title')}</div>
       <div style={styles.hint}>{t('officialFeatures.hint')}</div>
-      {rows === null ? <div style={styles.hint}>{t('officialFeatures.unavailable')}</div> : null}
+      {state === 'loading' ? <div style={styles.hint}>{t('officialFeatures.loading')}</div> : null}
+      {state === 'failed' ? (
+        <div style={styles.error}>
+          {t('officialFeatures.loadFailed')}
+          {retry}
+        </div>
+      ) : null}
       {rows === null
         ? null
         : rows.map((row) => (
@@ -259,20 +370,12 @@ export function FeaturesBody({
       {busy ? <div style={styles.hint}>{t('officialFeatures.busy')}</div> : null}
       {error === null ? null : (
         <div style={styles.error}>
-          {t('officialFeatures.failed', { message: error })}
-          <button type="button" style={styles.retry} onClick={() => void onToggleRetry()}>
-            {t('officialFeatures.retry')}
-          </button>
+          {t(error)}
+          {retry}
         </div>
       )}
     </div>
   );
-
-  /** 重试只重读真实状态。 */
-  async function onToggleRetry() {
-    setError(null);
-    await refresh();
-  }
 }
 
 /** 面板样式。 */
@@ -284,11 +387,6 @@ const styles = {
     padding: '4px 0 8px',
     color: 'var(--dsw-alias-label-primary)',
     fontSize: 13,
-  } as CSSProperties,
-  title: {
-    fontSize: 14,
-    fontWeight: 600,
-    lineHeight: 1.4,
   } as CSSProperties,
   hint: {
     color: 'var(--dsw-alias-label-secondary)',
@@ -302,7 +400,18 @@ const styles = {
     padding: '6px 0',
     borderTop: '1px solid var(--dsw-alias-border-l1)',
   } as CSSProperties,
+  text: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    minWidth: 0,
+  } as CSSProperties,
   label: {
+    lineHeight: 1.5,
+  } as CSSProperties,
+  detail: {
+    color: 'var(--dsw-alias-label-secondary)',
+    fontSize: 12,
     lineHeight: 1.5,
   } as CSSProperties,
   switch: {

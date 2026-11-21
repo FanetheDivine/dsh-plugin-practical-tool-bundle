@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Sweep sessions",
+    "description": "Click the broom at the bottom of the sidebar to archive unpinned sessions and permanently delete archived ones. Running and open sessions are skipped."
+  }
+}

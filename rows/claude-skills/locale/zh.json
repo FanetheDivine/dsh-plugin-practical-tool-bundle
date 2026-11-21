@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "加载项目 Claude 技能",
+    "description": "会话自动加载项目里 .claude/skills 下的技能。只读取，不修改文件。"
+  }
+}

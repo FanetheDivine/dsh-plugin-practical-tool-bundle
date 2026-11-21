@@ -5,7 +5,7 @@
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "description": "一个 DSH 组合包，六行：侧栏清理会话、清理推理块、项目 .claude 技能、重启按钮、手机触控放大与管理官方功能。",
+  "description": "六个可以单独开关的小工具：一键清理会话、推理报错自动重试、加载项目 Claude 技能、重启按钮、手机大按钮、官方功能开关。",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/FanetheDivine/dsh-plugin-practical-tool-bundle.git"
@@ -36,26 +36,38 @@
       "types": "./dist/sweeper.d.ts",
       "import": "./dist/sweeper.mjs"
     },
+    "./sweeper/locale/*.json": "./rows/sweeper/locale/*.json",
+    "./sweeper/icon": "./rows/sweeper/icon.svg",
     "./reasoning-reset": {
       "types": "./dist/reasoning-reset.d.ts",
       "import": "./dist/reasoning-reset.mjs"
     },
+    "./reasoning-reset/locale/*.json": "./rows/reasoning-reset/locale/*.json",
+    "./reasoning-reset/icon": "./rows/reasoning-reset/icon.svg",
     "./claude-skills": {
       "types": "./dist/claude-skills.d.ts",
       "import": "./dist/claude-skills.mjs"
     },
+    "./claude-skills/locale/*.json": "./rows/claude-skills/locale/*.json",
+    "./claude-skills/icon": "./rows/claude-skills/icon.svg",
     "./restart": {
       "types": "./dist/restart.d.ts",
       "import": "./dist/restart.mjs"
     },
+    "./restart/locale/*.json": "./rows/restart/locale/*.json",
+    "./restart/icon": "./rows/restart/icon.svg",
     "./mobile": {
       "types": "./dist/mobile.d.ts",
       "import": "./dist/mobile.mjs"
     },
+    "./mobile/locale/*.json": "./rows/mobile/locale/*.json",
+    "./mobile/icon": "./rows/mobile/icon.svg",
     "./official-features": {
       "types": "./dist/official-features.d.ts",
       "import": "./dist/official-features.mjs"
     },
+    "./official-features/locale/*.json": "./rows/official-features/locale/*.json",
+    "./official-features/icon": "./rows/official-features/icon.svg",
     "./client": {
       "types": "./dist/client/index.d.ts",
       "default": "./dist/client.js"
@@ -67,6 +79,7 @@
     "dist",
     "cordis.patch.yml",
     "locale/*.json",
+    "rows",
     "assets/*",
     "icon.svg",
     "README.md"

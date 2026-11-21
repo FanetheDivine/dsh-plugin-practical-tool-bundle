@@ -11,6 +11,17 @@
 - 路由 `GET`/`POST /api/dsh-practical-tools/official-features`
 - 根行状态路由增加 `officialFeatures` 项，前端新增一块面板界面
 
+### Changed
+
+- 插件标题改为「DSH实用工具组合包」，英文 `DSH practical tool bundle`；描述按用户视角重写
+- 六个功能行新增中英文标题、描述与图标，显示在 Plugins 页
+- 功能名改为：一键清理会话、推理报错自动重试、加载项目 Claude 技能、重启按钮、手机大按钮、官方功能开关
+- README 只保留 npm 徽章与六段功能简介；路由与开发内容在 `docs/`
+- 官方功能开关面板：去掉重复标题，每个功能下显示关闭后果，区分加载中与读取失败
+- 重启与官方功能切换失败时显示本地化文案；重启路由的 `error` 改为错误码 `restart-pending`、`helper-failed`、`restart-failed`，原始说明在 `message`
+- 清理面板与重启弹窗文案精简
+- 宪章 2.2.0：README 归属改为功能简介与 npm 徽章
+
 ## 1.0.0
 
 ### Added

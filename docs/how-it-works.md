@@ -134,6 +134,6 @@
 
 ## 打包与发布
 
-- `files` 决定包内容：`dist`、`cordis.patch.yml`、`locale/*.json`、`assets/*`、`icon.svg`、`README.md`。
+- `files` 决定包内容：`dist`、`cordis.patch.yml`、`locale/*.json`、`rows`、`assets/*`、`icon.svg`、`README.md`。
 - `pnpm run release` 依次运行 `pnpm check`、`pnpm format`、`npm version patch`、`scripts/release-archive.mjs`，然后 push 分支与 tag。
 - CI 收到 tag 后用 npm trusted publishing 发布。

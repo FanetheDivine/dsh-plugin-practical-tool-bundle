@@ -1,4 +1,4 @@
-// 重启按钮测试：槽位注册、rail 样式 effect、按钮渲染与阶段迁移。
+// 重启按钮测试：槽位注册、rail 样式 effect、按钮渲染、阶段迁移与错误码。
 // 状态机是纯函数，取消路径不触碰网络；组件用 react-dom/server 渲染。
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -14,8 +14,11 @@ import {
   overlayTitleKey,
   RestartButton,
   type RestartButtonProps,
+  RestartError,
   type RestartPhase,
   requestRestart,
+  restartErrorKey,
+  restartRequest,
   transitionPhase,
   triggerStyle,
 } from '../src/client/restart.tsx';
@@ -154,5 +157,48 @@ describe('阶段迁移', () => {
     expect(dialogTitleKey('confirm', true)).toBe('restart.desktopConfirmTitle');
     expect(overlayTitleKey('restarting', true)).toBe('restart.desktopRestarting');
     expect(overlayTextKey('slow', true)).toBe('restart.desktopSlowText');
+  });
+});
+
+describe('失败文案', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('按错误码选择文案键，未知值与网络失败用通用文案', () => {
+    expect(restartErrorKey('restart-pending')).toBe('restart.error.duplicate');
+    expect(restartErrorKey('helper-failed')).toBe('restart.error.helper');
+    expect(restartErrorKey('restart-failed')).toBe('restart.error.unknown');
+    expect(restartErrorKey('something-new')).toBe('restart.error.unknown');
+    expect(restartErrorKey(undefined)).toBe('restart.error.unknown');
+  });
+
+  it('路由失败时抛出带错误码的 RestartError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json(
+          { ok: false, error: 'restart-pending', message: 'a restart has already been requested' },
+          { status: 409 },
+        ),
+      ),
+    );
+    const failure = await restartRequest('api/dsh-practical-tools/restart', 'POST').catch(
+      (error: unknown) => error,
+    );
+    expect(failure).toBeInstanceOf(RestartError);
+    expect((failure as RestartError).code).toBe('restart-pending');
+  });
+
+  it('回答不是 JSON 时错误码为空', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('bad gateway', { status: 502 })),
+    );
+    const failure = await restartRequest('api/dsh-practical-tools/restart', 'POST').catch(
+      (error: unknown) => error,
+    );
+    expect(failure).toBeInstanceOf(RestartError);
+    expect((failure as RestartError).code).toBeUndefined();
   });
 });

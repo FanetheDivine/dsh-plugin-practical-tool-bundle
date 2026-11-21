@@ -1,6 +1,6 @@
 // 插件元数据测试：断言 locale/<语言 id>.json 的结构、键集与打包声明。
 // 宿主在插件未激活时读取这些文件，因此校验放在测试里，不进入运行时。
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -82,5 +82,68 @@ describe('插件元数据资源', () => {
     const manifest = asRecord(JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')));
     expect(asRecord(manifest['exports'])['./locale/*.json']).toBe('./locale/*.json');
     expect(manifest['files']).toContain('locale/*.json');
+  });
+});
+
+/** 功能行的子路径，与 cordis.patch.yml 中 name 的后缀一致。 */
+const ROW_SUBPATHS = [
+  'sweeper',
+  'reasoning-reset',
+  'claude-skills',
+  'restart',
+  'mobile',
+  'official-features',
+];
+
+/** 宿主接受的图标大小上限。 */
+const ICON_MAX_BYTES = 256 * 1024;
+
+/** 读取一个功能行的元数据文件。 */
+function readRowLocale(
+  subpath: string,
+  id: string,
+): { text: string; meta: Record<string, unknown> } {
+  const text = readFileSync(path.join(ROOT, 'rows', subpath, 'locale', `${id}.json`), 'utf8');
+  return { text, meta: asRecord(asRecord(JSON.parse(text))['meta']) };
+}
+
+describe('功能行元数据资源', () => {
+  it('子路径与 cordis.patch.yml 的行一一对应', () => {
+    const patch = readFileSync(path.join(ROOT, 'cordis.patch.yml'), 'utf8');
+    const names = [...patch.matchAll(/name: dsh-plugin-practical-tool-bundle\/(\S+)/g)].map(
+      (match) => match[1],
+    );
+    expect(names.sort()).toEqual([...ROW_SUBPATHS].sort());
+  });
+
+  it.each(ROW_SUBPATHS)('%s 的每种基线语言含单行标题与非空描述', (subpath) => {
+    const keySets = BASELINE_LOCALES.map((id) => {
+      const { text, meta } = readRowLocale(subpath, id);
+      expect(Object.keys(meta).sort()).toEqual(['description', 'title']);
+      expect(String(meta['title']).trim()).not.toBe('');
+      expect(String(meta['title'])).not.toMatch(/[\r\n]/);
+      expect(String(meta['description']).trim()).not.toBe('');
+      for (const char of FORBIDDEN_CHARS) expect(text.includes(char)).toBe(false);
+      return Object.keys(meta).sort();
+    });
+    for (const keys of keySets) expect(keys).toEqual(keySets[0]);
+  });
+
+  it.each(ROW_SUBPATHS)('%s 的图标是不超过上限的 SVG', (subpath) => {
+    const file = path.join(ROOT, 'rows', subpath, 'icon.svg');
+    const text = readFileSync(file, 'utf8');
+    expect(text.trimStart().startsWith('<svg')).toBe(true);
+    expect(text).toContain('viewBox=');
+    expect(statSync(file).size).toBeLessThanOrEqual(ICON_MAX_BYTES);
+  });
+
+  it('package.json 为每行导出元数据与图标并打包 rows', () => {
+    const manifest = asRecord(JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')));
+    const exportsMap = asRecord(manifest['exports']);
+    for (const subpath of ROW_SUBPATHS) {
+      expect(exportsMap[`./${subpath}/locale/*.json`]).toBe(`./rows/${subpath}/locale/*.json`);
+      expect(exportsMap[`./${subpath}/icon`]).toBe(`./rows/${subpath}/icon.svg`);
+    }
+    expect(manifest['files']).toContain('rows');
   });
 });

@@ -55,6 +55,7 @@ export type RestartRuntime = 'desktop' | 'web';
 export interface RestartPayload {
   readonly ok?: boolean;
   readonly error?: string;
+  readonly message?: string;
   readonly pid?: number | null;
   readonly startedAt?: number | null;
   readonly logPath?: string | null;
@@ -268,15 +269,40 @@ const RAIL_CSS = [
   '}',
 ].join('\n');
 
+/** 重启路由失败时抛出的错误，携带错误码。 */
+export class RestartError extends Error {
+  /** 路由返回的错误码；解析失败时为 undefined。 */
+  readonly code: string | undefined;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'RestartError';
+    this.code = code;
+  }
+}
+
+/** 重启错误码到文案键；未列出的值用通用文案。 */
+const RESTART_ERROR_KEY: Readonly<Record<string, PracticalToolKey>> = {
+  'restart-pending': 'restart.error.duplicate',
+  'helper-failed': 'restart.error.helper',
+};
+
+/**
+ * 失败弹窗显示的文案键。
+ * @param code - 路由返回的错误码；网络失败时为 undefined。
+ */
+export function restartErrorKey(code: string | undefined): PracticalToolKey {
+  return (code === undefined ? undefined : RESTART_ERROR_KEY[code]) ?? 'restart.error.unknown';
+}
+
 /** 取 JSON 的重启请求；传输失败与非 2xx 都抛出。 */
 export async function restartRequest(url: string, method: 'GET' | 'POST'): Promise<RestartPayload> {
   const response = await fetch(url, { method, cache: 'no-store', credentials: 'same-origin' });
   const payload = (await response.json().catch(() => null)) as RestartPayload | null;
   if (!response.ok || payload === null || payload.ok === false) {
-    throw new Error(
-      payload !== null && typeof payload.error === 'string'
-        ? payload.error
-        : `HTTP ${response.status}`,
+    throw new RestartError(
+      payload?.message ?? `HTTP ${response.status}`,
+      typeof payload?.error === 'string' ? payload.error : undefined,
     );
   }
   return payload;
@@ -346,7 +372,7 @@ export function RestartButton({ wide, t }: RestartButtonProps) {
   });
   const desktop = runtime === 'desktop';
   const [phase, dispatch] = useReducer(transitionPhase, 'idle');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<PracticalToolKey | null>(null);
   const [logPath, setLogPath] = useState<string | null>(null);
   const [hover, setHover] = useState(false);
   // 早于本功能的 Host 回答 /info 时没有 runtime：它只能重启自己，页面会失去窗口。
@@ -429,7 +455,7 @@ export function RestartButton({ wide, t }: RestartButtonProps) {
       accepted = await requestRestart();
     } catch (failure) {
       if (!mounted.current) return;
-      const message = failure instanceof Error ? failure.message : String(failure);
+      const message = restartErrorKey(failure instanceof RestartError ? failure.code : undefined);
       if (!(failure instanceof TypeError)) {
         setError(message);
         dispatch({ type: 'fail' });
@@ -530,7 +556,7 @@ export function RestartButton({ wide, t }: RestartButtonProps) {
             >
               <div style={styles.title}>{t(titleKey)}</div>
               {phase === 'failed' ? (
-                <div style={styles.error}>{error ?? ''}</div>
+                <div style={styles.error}>{t(error ?? 'restart.error.unknown')}</div>
               ) : (
                 <div style={styles.text}>
                   {t(desktop ? 'restart.desktopConfirmText' : 'restart.confirmText')}
