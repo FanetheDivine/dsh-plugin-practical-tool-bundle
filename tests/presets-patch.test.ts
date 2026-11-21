@@ -117,9 +117,29 @@ describe('SA 预设补丁', () => {
     expect(dispatch.plugins.find((entry) => entry.id === 'tool-pwsh')?.disabled).toBe(
       "process.platform !== 'win32'",
     );
-    expect(dispatch.plugins.find((entry) => entry.id === 'compaction')).toEqual(
-      standard.plugins.find((entry) => entry.id === 'compaction'),
-    );
+  });
+
+  it('调度预设的 compaction-basic 阈值早于标准预设，其余压缩子行相同', () => {
+    const dispatchChildren = asRecord(
+      dispatch.plugins.find((entry) => entry.id === 'compaction') ?? {},
+    ).config as Entry[];
+    const standardChildren = asRecord(
+      standard.plugins.find((entry) => entry.id === 'compaction') ?? {},
+    ).config as Entry[];
+    expect(dispatchChildren.map((entry) => entry.id)).toEqual([
+      'compaction-basic',
+      'command-compact',
+      'tool-result-pruner',
+    ]);
+    expect(dispatchChildren.find((entry) => entry.id === 'compaction-basic')?.config).toEqual({
+      thresholdRatio: 0.3,
+    });
+    expect(
+      standardChildren.find((entry) => entry.id === 'compaction-basic')?.config,
+    ).toBeUndefined();
+    const withoutThreshold = (entries: Entry[]) =>
+      entries.filter((entry) => entry.id !== 'compaction-basic');
+    expect(withoutThreshold(dispatchChildren)).toEqual(withoutThreshold(standardChildren));
   });
 
   it('meta-tools 十一项全开并固定任务预设', () => {
