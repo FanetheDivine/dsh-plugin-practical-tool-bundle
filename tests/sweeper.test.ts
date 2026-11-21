@@ -11,6 +11,8 @@ import type { Context } from '../src/types.ts';
 class FakeRegistry {
   readonly archived = new Set<string>();
   readonly active = new Set<string>();
+  /** 归档成功后调用，用来模拟前端收到通知后释放会话。 */
+  onArchive?: (id: string) => void;
 
   async archiveSession(id: string): Promise<void> {
     if (this.active.has(id)) {
@@ -19,6 +21,7 @@ class FakeRegistry {
       throw error;
     }
     this.archived.add(id);
+    this.onArchive?.(id);
   }
 
   get archivedSessionIds(): Iterable<string> {
@@ -192,6 +195,23 @@ describe('清理会话路由', () => {
     expect(body.deletedIds).toEqual([]);
     expect(body.skippedIds).toEqual([]);
     expect(body.failedIds).toEqual([]);
+  });
+
+  it('归档后会话从内存消失时，同一次请求仍计入延后并保留日志', async () => {
+    // 归档通知前端释放会话，删除阶段再查内存已经查不到；请求发起时的状态必须生效。
+    const registry = new FakeRegistry();
+    const live = new Set(['session-1']);
+    const log = await makeLog(sessionsRoot, 'cwd-a', 'session-1');
+    registry.onArchive = (id) => live.delete(id);
+    const handler = createSweepHandler(
+      hostCtx({ registry, sessions: { get: (id: string) => (live.has(id) ? { id } : undefined) } }),
+      sessionsRoot,
+    );
+
+    const { body } = await sweep(handler, { ids: ['session-1'] });
+
+    expect(body).toMatchObject({ archived: 1, deleted: 0, deferred: 1, failed: 0 });
+    expect(await exists(log)).toBe(true);
   });
 
   it('ids 为空也会删除之前已归档会话的日志', async () => {

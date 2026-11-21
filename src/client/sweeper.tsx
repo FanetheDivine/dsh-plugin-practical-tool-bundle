@@ -1,6 +1,7 @@
 /**
  * 侧栏清理会话界面：扫帚按钮、会话计数面板与两次点击确认。
- * 导出 installSweeper 与 SweepButton、SweepPanel；文案由槽位注入的 t 提供。
+ * 打开中的会话与它的祖先作为 keepIds 保护；文案由槽位注入的 t 提供。
+ * 导出 installSweeper 与 SweepButton、SweepPanel、createSweepApi。
  */
 import type { Context } from '@deepseek-ai/cordis';
 // Type-only：拉取 ctx.slots 服务。
@@ -19,6 +20,9 @@ const SWEEP_API = SWEEP_PATH.replace(/^\//, '');
 
 /** 悬停背景：与重启按钮一致的 12% 强调色混合。 */
 const HOVER_BACKGROUND = 'color-mix(in srgb, var(--dsw-alias-label-secondary) 12%, transparent)';
+
+/** 视为「打开」的持有来源：主对话区、子代理聊天、右侧会话视图。 */
+const PROTECTED_SOURCES = ['mainView', 'sidebarChat', 'sidebarView'] as const;
 
 /** 面板锚点：视口坐标。 */
 interface SweepAnchor {
@@ -80,7 +84,8 @@ interface SweepPayload {
 /** 一条会话摘要的最小结构。 */
 interface SessionSummaryLike {
   origin?: string;
-  retainedBy?: { mainView?: number };
+  parentId?: string;
+  retainedBy?: Partial<Record<string, number>>;
 }
 
 /** Session 列表快照的最小结构。 */
@@ -89,10 +94,15 @@ interface SessionListSnapshotLike {
   byId: Readonly<Record<string, SessionSummaryLike | undefined>>;
 }
 
-/** Session store 的最小结构。 */
-interface SessionStoreLike {
-  getSnapshot?(): SessionListSnapshotLike;
+/** 会话列表 store 的最小结构。 */
+interface SessionListStoreLike {
+  getSnapshot(): SessionListSnapshotLike;
   subscribe?(listener: () => void): () => void;
+}
+
+/** 会话服务的最小结构：列表挂在 `list` 上。 */
+interface SessionsServiceLike {
+  readonly list: SessionListStoreLike;
 }
 
 /** 一个 Workspace 的会话成员。 */
@@ -120,9 +130,9 @@ interface WorkspacesServiceLike {
   list: WorkspaceListStoreLike;
 }
 
-/** 读取 Session store；服务缺失时返回 undefined。 */
-function sessionStoreOf(ctx: Context): SessionStoreLike | undefined {
-  return ctx.get('sessions') as SessionStoreLike | undefined;
+/** 读取会话列表 store；服务缺失时返回 undefined。 */
+function sessionListOf(ctx: Context): SessionListStoreLike | undefined {
+  return (ctx.get('sessions') as SessionsServiceLike | undefined)?.list;
 }
 
 /** 读取 Workspace 服务。 */
@@ -435,7 +445,7 @@ export function SweepButton({ t, api }: SweepButtonProps): ReactNode {
 
 /** 构造清理 API：会话列表、Workspace 归档集与宿主清理路由。 */
 export function createSweepApi(ctx: Context): SweepApi {
-  const sessionList = (): SessionStoreLike | undefined => sessionStoreOf(ctx);
+  const sessionList = (): SessionListStoreLike | undefined => sessionListOf(ctx);
   /** 本页已删除的会话；列表重新发布前不再把它们送去清理。 */
   const purged = new Set<string>();
 
@@ -460,11 +470,26 @@ export function createSweepApi(ctx: Context): SweepApi {
     return [...ids];
   };
 
-  /** 主视图仍在显示的会话 id；清理必须保留它们。 */
-  const retainedIds = (): string[] => {
+  /**
+   * 正在显示的会话与它的全部祖先；清理必须保留它们。
+   * 持有来源含主对话区、子代理聊天与右侧会话视图；列表缺失时返回空集。
+   */
+  const protectedIds = (): string[] => {
     const list = sessionList()?.getSnapshot?.();
     if (list === undefined) return [];
-    return list.ids.filter((id) => (list.byId[id]?.retainedBy?.mainView ?? 0) > 0);
+    const kept = new Set<string>();
+    for (const id of Object.keys(list.byId)) {
+      const row = list.byId[id];
+      if (row === undefined) continue;
+      const shown = PROTECTED_SOURCES.some((source) => (row.retainedBy?.[source] ?? 0) > 0);
+      if (!shown) continue;
+      // 已收集的 id 直接终止上溯，顺带挡住自引用。
+      for (let current: string | undefined = id; current !== undefined && !kept.has(current); ) {
+        kept.add(current);
+        current = list.byId[current]?.parentId;
+      }
+    }
+    return [...kept];
   };
 
   /** 仍值得展示的已归档会话数。 */
@@ -486,9 +511,10 @@ export function createSweepApi(ctx: Context): SweepApi {
       const snapshot = workspacesOf(ctx).list.getSnapshot();
       const pinned = new Set(snapshot.pinnedSessionIds);
       const archived = new Set(snapshot.archivedSessionIds);
+      const keep = new Set(protectedIds());
       let unpinned = 0;
       for (const id of ordinaryIds()) {
-        if (!pinned.has(id) && !archived.has(id)) unpinned += 1;
+        if (!pinned.has(id) && !archived.has(id) && !keep.has(id)) unpinned += 1;
       }
       return { unpinned, archived: archivedCount(), ready: listReady(snapshot) };
     },
@@ -507,14 +533,17 @@ export function createSweepApi(ctx: Context): SweepApi {
       const pinned = new Set(snapshot.pinnedSessionIds);
       const archived = new Set(snapshot.archivedSessionIds);
       // 已归档的 id 不再提交：宿主会删除全部已归档日志，只差未归档的部分。
-      const ids = ordinaryIds().filter((id) => !pinned.has(id) && !archived.has(id));
-      const keepIds = retainedIds();
+      const keepIds = protectedIds();
+      const keep = new Set(keepIds);
+      const ids = ordinaryIds().filter(
+        (id) => !pinned.has(id) && !archived.has(id) && !keep.has(id),
+      );
       const response = await fetch(SWEEP_API, {
         method: 'POST',
         credentials: 'same-origin',
         cache: 'no-store',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ids: ids.filter((id) => !keepIds.includes(id)), keepIds }),
+        body: JSON.stringify({ ids, keepIds }),
       });
       const payload = (await response.json().catch(() => null)) as SweepPayload | null;
       if (!response.ok || payload === null || payload.ok !== true) return { failed: -1 };
