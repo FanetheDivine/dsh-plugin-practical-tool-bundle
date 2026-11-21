@@ -1,0 +1,312 @@
+/* 「手机触控放大」样式表。
+ *
+ * 由手机样式行的 GET /api/dsh-practical-tools/mobile.css 提供，
+ * 抽屉宽度固定为 328。
+ * 客户端半部把这张表注入页面；行未启用时状态路由回答 false，样式随之卸载。
+ *
+ * 生效范围：所有规则都包在 (max-width: 767px) 里 —— 与官方移动外壳
+ * （dsh-web-mobile 的 767px 断点）同档，桌面端零影响。
+ *
+ * 选择器锚点约定（宿主升级时可能失效，失效时只是不放大，不会变形）：
+ *   [class*="sidebarCol"]、[class*="newSession"]、[class*="panelRow"]、
+ *   [class*="projectRow"]、[class*="sessionRow"]、[class*="footerActions"] …
+ *   一律用「哈希前缀的子串锚」而不是完整类名，宿主换哈希时规则仍命中。
+ *
+ * 特异性：官方移动层（dsh-web-mobile）对顶栏 / 输入区用了 (0,4,0) 的
+ * !important 规则压制尺寸，普通声明赢不了；因此顶栏与输入区规则统一加
+ * ④ 个 :root 提升特异性（(:root)×4 = (0,4,0)，再加类选择器即更高）。
+ * 抽屉与会话列表那部分宿主/移动层没有 !important，普通声明 + !important
+ * 即可，故不再加 :root 前缀。
+ */
+
+@media (max-width: 767px) {
+  /* ───────────────────────── 抽屉（会话列表所在侧栏）───────────────────────── */
+  /* 抽屉宽度：官方移动层把列宽钉在 min(88vw, 280px) !important，
+   * 且宿主给内层根节点写了 inline width: 280px，两者都要一起放开，
+   * 内层才会跟着列宽重排（实测：只改列宽时内层仍是 280，标题可用宽度不变）。 */
+  [data-mobile-nav="frame"]:not([data-sidebar-collapsed]) > :first-child {
+    width: min(88vw, __DRAWER_WIDTH__px) !important;
+  }
+  [class*="sidebarCol"] > [style*="display: contents"] > [style*="width"] {
+    width: 100% !important;
+  }
+
+  /* 品牌行：宿主 24px 高，点开设置面板的入口，抬到 30px。 */
+  [class*="sidebarCol"] [class*="brand"] {
+    height: 30px !important;
+    font-size: 15px !important;
+  }
+
+  /* 新建会话：38 → 46，字号 14 → 15。 */
+  [class*="sidebarCol"] button[class*="newSession"] {
+    height: 46px !important;
+    font-size: 15px !important;
+  }
+  [class*="sidebarCol"] button[class*="newSession"] svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* 插件 / 自动化任务 / 定时任务 三行：36 → 46，字号 14 → 15。 */
+  [class*="sidebarCol"] button[class*="panelRow"] {
+    height: 46px !important;
+    font-size: 15px !important;
+  }
+  [class*="sidebarCol"] [class*="panelGlyph"],
+  [class*="sidebarCol"] [class*="panelGlyph"] svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* 工作区标题行与其右侧三颗图标按钮（搜索 / 视图 / 添加）：28 → 34。 */
+  [class*="sidebarCol"] [class*="sectionHeader"] {
+    height: 40px !important;
+    font-size: 15px !important;
+  }
+  [class*="sidebarCol"] [class*="sectionHeader"] button,
+  [class*="sidebarCol"] [class*="searchButton"] {
+    width: 34px !important;
+    height: 34px !important;
+  }
+  [class*="sidebarCol"] [class*="sectionHeader"] button svg,
+  [class*="sidebarCol"] [class*="searchButton"] svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* 工作区分组行：34 → 42，字号 14 → 15。 */
+  [class*="sidebarCol"] [class*="projectRow"] {
+    height: 42px !important;
+  }
+  [class*="sidebarCol"] [class*="projectRow"] [class*="title"] {
+    font-size: 15px !important;
+    line-height: 21px !important;
+  }
+  [class*="sidebarCol"] [class*="projectRow"] [class*="folder"] svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* 会话行：32 → 46，标题 14 → 16，时间 10 → 12。
+   * 行内 ⋯（重命名/分叉/归档）与置顶图标在触屏上是常显的（移动层保证），
+   * 这里把它们的 16px 命中盒放大到 30px，图标 13 → 18。 */
+  [class*="sidebarCol"] [class*="sessionRow"] {
+    height: 46px !important;
+  }
+  [class*="sidebarCol"] [class*="sessionRow"] [class*="title"] {
+    font-size: 16px !important;
+    line-height: 22px !important;
+  }
+  [class*="sidebarCol"] [class*="sessionRow"] [class*="time"] {
+    font-size: 12px !important;
+    line-height: 18px !important;
+  }
+  [class*="sidebarCol"] [class*="sessionRow"] [class*="pinIndicator"] svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  /* 会话行左侧的状态/类型图标（16px 圆环、文件夹）：16 → 18，与 16 号标题相称。 */
+  [class*="sidebarCol"] [class*="sessionRow"] [class*="slot"] svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  [class*="sidebarCol"] [class*="sessionRow"] [class*="_rowActions"] {
+    gap: 2px !important;
+  }
+  [class*="sidebarCol"] [class*="sessionRow"] [class*="_rowActions"] button {
+    width: 30px !important;
+    height: 30px !important;
+  }
+  [class*="sidebarCol"] [class*="sessionRow"] [class*="_rowActions"] button svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* 抽屉底部：远程访问 / 清理 / 重启 / 导出会话日志 / 更多。 */
+  [class*="sidebarCol"] [class*="footerActions"] {
+    gap: 4px !important;
+  }
+  [class*="sidebarCol"] [class*="footerActions"] button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    font-size: 15px !important;
+  }
+  [class*="sidebarCol"] [class*="footerActions"] button svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  [class*="sidebarCol"] [class*="triggerRow"] button,
+  [class*="sidebarCol"] [class*="settingsArea"] button,
+  [class*="sidebarCol"] [class*="accountRow"] button {
+    min-height: 42px !important;
+    font-size: 15px !important;
+  }
+
+  /* ───────────────────────── 会话页顶栏 ───────────────────────── */
+  :root:root:root:root [data-mobile-nav="frame"] header [class*="crumb"] {
+    font-size: 15px !important;
+    line-height: 22px !important;
+  }
+  /* 顶栏图标按钮（目录 / 文件 / 关闭等）28~30 → 34，抽屉开关 38。 */
+  :root:root:root:root [data-mobile-nav="frame"] header [class*="headerActions"] button {
+    min-width: 34px !important;
+    min-height: 34px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] header button:has(svg) {
+    min-width: 34px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] [data-mobile-nav="toggle"],
+  :root:root:root:root [data-mobile-nav="frame"] [data-mobile-nav="files"] {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] [data-mobile-nav="toggle"] svg,
+  :root:root:root:root [data-mobile-nav="frame"] [data-mobile-nav="files"] svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  /* 对话 / 轨迹 两个页签：26 → 32 高，字号 13 → 14。 */
+  :root:root:root:root [data-mobile-nav="frame"] header [role="tab"] {
+    height: auto !important;
+    min-height: 32px !important;
+    padding: 0 2px !important;
+    font-size: 14px !important;
+  }
+  /* 子智能体 / 后台任务两个计数胶囊：24~25 → 34 高（与顶栏按钮齐平），字号 13。 */
+  :root:root:root:root [data-mobile-nav="frame"] header [class*="ZKlsPq_trigger"],
+  :root:root:root:root [data-mobile-nav="frame"] header [class*="QsffPG_trigger"] {
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 6px !important;
+    font-size: 13px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] header [class*="ZKlsPq_trigger"] span,
+  :root:root:root:root [data-mobile-nav="frame"] header [class*="QsffPG_trigger"] span {
+    font-size: 13px !important;
+  }
+  /* 「简洁模式」等顶栏文字按钮：13 号字、高 34 已由上面的按钮规则抬起。 */
+  :root:root:root:root [data-mobile-nav="frame"] header [class*="SVAs4q_label"] {
+    font-size: 13px !important;
+  }
+
+  /* ───────────────────────── 输入区（composer）───────────────────────── */
+  /* 添加文件/调用指令、访问模式：28~30 → 36。 */
+  :root:root:root:root [data-mobile-nav="frame"] [class*="tools"] button,
+  :root:root:root:root [data-mobile-nav="frame"] button[aria-label="添加文件或调用指令"],
+  :root:root:root:root [data-mobile-nav="frame"] button[aria-label="添加文件"] {
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] [class*="iWlSmW_trigger"] {
+    min-width: 34px !important;
+    min-height: 34px !important;
+    height: 34px !important;
+  }
+  /* 访问模式那一行（权限 chip）：32 → 32 高、字号 13.5。 */
+  :root:root:root:root [data-mobile-nav="frame"] [class*="modes"] {
+    height: 32px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] [class*="modes"] button {
+    height: 32px !important;
+    font-size: 13.5px !important;
+  }
+  /* 模型选择、上下文占用、统计胶囊：28 → 28/13 号字。 */
+  :root:root:root:root [data-mobile-nav="frame"] [class*="_7KE1Ra_trigger"] {
+    height: 32px !important;
+    min-height: 32px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] [class*="_7KE1Ra_trigger"] svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] [class*="JObwrW_trigger"] {
+    height: 28px !important;
+    min-height: 28px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] [class*="pill"] {
+    height: 28px !important;
+    font-size: 13px !important;
+  }
+  /* 发送 / 停止按钮：34 → 40，最常用的那颗，扩大后不容易点空。 */
+  :root:root:root:root [data-mobile-nav="frame"] [class*="uV2eYG_primary"] {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  /* ───────────────── 输入卡片：功能键统一 44px（与 3.2.x 的紧凑重排共存）─────────────────
+   * 3.2.1 把首页/新会话输入卡片的功能键收到 36px、发送键收到 30px，
+   * 拇指很难点准。这里不再逐个锚哈希类名（宿主每次重排都会换），
+   * 直接按「输入卡片内的按钮」统一抬到 44px，新旧哈希都命中。
+   * 首页卡片（GRgSLq_*）与会话页卡片（uV2eYG_*）同时受益。
+   * 移动层把这些按钮的 width/height 钉在 (0,4,0) !important，故同样加 ④ 个 :root。 */
+  :root:root:root:root [data-mobile-nav="frame"] [data-composer-card] button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: auto !important;
+    height: 44px !important;
+  }
+  :root:root:root:root [data-mobile-nav="frame"] [data-composer-card] button svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* ───────────────── 首页（hero）区的两个下拉芯片 ─────────────────
+   * 「工作区」「标准模式」在新会话首页只画 28px 高（118×28 / 106×28），
+   * 是进入项目与切换预设的唯一入口，触屏上经常点空。抬到 40px。 */
+  :root:root:root:root [data-phase="hero"] button[class*="_workspace"],
+  :root:root:root:root [data-phase="hero"] button[class*="_seat"] {
+    height: 40px !important;
+    min-height: 40px !important;
+    font-size: 15px !important;
+  }
+
+  /* 输入框文字：主题字号调到 18px 后，宿主按 16px 估的两行高度（52px）
+   * 装不下两行 × 28px 行高，占位文字第二行会和第一行叠在一起（手机上非常明显）。
+   * 让高度跟随内容，并给两行留出最小高度；超长输入在框内滚动。 */
+  :root:root:root:root [data-mobile-nav="frame"] [data-composer-card] [class*="_input"] {
+    height: auto !important;
+    min-height: 56px !important;
+    max-height: 40vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* 发送 / 停止键：3.2.x 的自适应布局用 :has() 长选择器把它的尺寸钉在
+   * (0,11,0) !important（styles/layout.css.ts 里按 hero / conversation
+   * 两个阶段分别定尺寸），上面 4 层 :root 的 (0,6,1) 压不住，
+   * 所以单独用 12 层 :root（(0,14,0)）把它抬到 44px —— 全屏最常点的一颗。 */
+  :root:root:root:root:root:root:root:root:root:root:root:root
+    [data-composer-card]
+    button[class*="_primary"] {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  /* 底部安全区：iPhone 的 Home 指示条会压住输入卡片最后一行功能键。 */
+  [data-composer-card] {
+    padding-bottom: max(0px, env(safe-area-inset-bottom)) !important;
+  }
+  [class*="sidebarCol"] {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+
+  /* ───────────────── 左上角两个浮标不再重叠 ─────────────────
+   * 品牌按钮（打开目录/会话列表，38×38，left:10 top:12）与 better-sidebar
+   * 的「展开底部面板」把手（fixed 于 4,4，28×28，z-index 40）压在同一个
+   * 38px 见方的角落里：视觉上糊成一团，点击也互相抢。
+   * 把手挪到品牌按钮正下方，仍贴左列，不压正文。 */
+  span[class*="_dockFallback"] {
+    top: 58px !important;
+    left: 10px !important;
+    bottom: auto !important;
+  }
+  span[class*="_dockFallback"] button {
+    width: 34px !important;
+    height: 34px !important;
+  }
+}

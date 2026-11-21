@@ -3,7 +3,7 @@ name: speckit-worktree-finish
 description: Push the feature branch, open a PR, wait for CI, reviews and the merge without deadlines, then clean up
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
-  author: dsh-plugin-template
+  author: dsh-plugin-practical-tool-bundle
   source: worktree:commands/speckit.worktree.finish.md
 ---
 

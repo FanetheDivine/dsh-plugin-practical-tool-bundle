@@ -15,22 +15,27 @@ const PLATFORM_MODULES = [
 ] as const;
 
 /** 浏览器产物注册 id，必须与 package.json 的 name 一致。 */
-const CLIENT_ID = 'dsh-plugin-template';
+const CLIENT_ID = 'dsh-plugin-practical-tool-bundle';
 
 /**
  * 两组构建：
- * 1) 宿主插件入口 → dist/index.mjs。npm 依赖保持 external，
- *    类型声明由 tsc -p tsconfig.build.json 生成。
+ * 1) 六个宿主入口 → dist/<name>.mjs。宿主依赖保持 external，
+ *    `yaml` 打进使用它的入口；类型声明由 tsc -p tsconfig.build.json 生成。
  * 2) 浏览器入口 → dist/client.js。调用
  *    window.__ModuleLoader__.load({ id, factory }) 注册插件，
  *    require 只解析平台种子，其余模块内联。
- *    clean 只在宿主构建上开启；client 配置排在后面且 clean: false，
- *    避免清掉先前产物。
  */
 export default defineConfig([
   {
-    name: 'dsh-plugin-template/host',
-    entry: ['src/index.ts'],
+    name: 'dsh-plugin-practical-tool-bundle/host',
+    entry: {
+      index: 'src/index.ts',
+      sweeper: 'src/sweeper/index.ts',
+      'reasoning-reset': 'src/reasoning-reset/index.ts',
+      'claude-skills': 'src/claude-skills/index.ts',
+      restart: 'src/restart/index.ts',
+      mobile: 'src/mobile/index.ts',
+    },
     outDir: 'dist',
     format: ['esm'],
     platform: 'node',
@@ -39,14 +44,14 @@ export default defineConfig([
       // 运行时使用宿主提供的依赖实例
       neverBundle: true,
       // 需要打包进产物的依赖
-      alwaysBundle: [],
+      alwaysBundle: ['yaml'],
     },
     fixedExtension: true,
     dts: false,
     clean: true,
   },
   {
-    name: 'dsh-plugin-template/client',
+    name: 'dsh-plugin-practical-tool-bundle/client',
     entry: { client: 'src/client/index.ts' },
     outDir: 'dist',
     format: 'cjs',
@@ -55,8 +60,7 @@ export default defineConfig([
     dts: false,
     clean: false,
     deps: {
-      // 平台种子不得内联；其余依赖（含 devDependencies）一律内联，
-      // 宿主模块表里没有的 require 会在运行时直接抛错。
+      // 平台种子不得内联；其余依赖一律内联
       neverBundle: [...PLATFORM_MODULES],
       alwaysBundle: (id: string) => !(PLATFORM_MODULES as readonly string[]).includes(id),
     },

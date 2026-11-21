@@ -3,7 +3,7 @@ name: speckit-worktree-create
 description: Create a <type>/<NNN>-<short-name> branch in a nested worktree at worktrees/<NNN>-<name>
 compatibility: Requires spec-kit project structure with .specify/ directory
 metadata:
-  author: dsh-plugin-template
+  author: dsh-plugin-practical-tool-bundle
   source: worktree:commands/speckit.worktree.create.md
 ---
 

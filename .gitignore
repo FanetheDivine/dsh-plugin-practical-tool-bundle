@@ -2,6 +2,12 @@ node_modules/
 dist/
 *.tsbuildinfo
 *.log
+.env
+.env.*
+coverage/
+results.json
+shots/
+.rdt-pinned
 *.zip
 .DS_Store
 Thumbs.db

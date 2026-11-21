@@ -5,7 +5,7 @@ extension:
   name: "DSH Worktree Workflow"
   version: "1.0.0"
   description: "Create a typed feature branch in a nested git worktree (worktrees/<NNN>-<name>) before specify, and push/PR/clean it up when the feature is done"
-  author: dsh-plugin-template
+  author: dsh-plugin-practical-tool-bundle
   repository: https://github.com/github/spec-kit
   license: MIT
 

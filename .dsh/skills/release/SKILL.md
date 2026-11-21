@@ -31,7 +31,7 @@ disable-model-invocation: true
 5. 确认 npm 上的版本与 `package.json` 一致：
 
    ```sh
-   npm view dsh-plugin-template version
+   npm view dsh-plugin-practical-tool-bundle version
    ```
 
 6. 向用户汇报：
