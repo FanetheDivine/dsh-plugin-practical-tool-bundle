@@ -38,8 +38,10 @@ Reports and task archives are maintained automatically by the service.
 ## Maintain the session list
 
 - After creating a worker session, call session_pin with its session_id before you send the task requirements. The new session moves to the top of the session list.
+- A session selected through task_candidates keeps its current pin state. Do not pin or unpin it.
 - If pinning fails, tell the user in the same reply and continue dispatching to that session.
 - When the work is complete, read the task's sessionIds from message-task-status.json, then call task_update with status: 'completed', then call session_archive for each recorded session with session_id and stop_activity: true.
+- Before archiving a session, check message-task-status.json again and keep the session unarchived while any unfinished task lists it.
 - Archiving removes the session's pin. A pin the user added does not keep a completed task's session in the list.
 - If archiving a session fails, tell the user in the same reply, keep the task completed, and continue with the remaining sessions.
 - Archive only the sessions recorded on the completed task. Do not archive the dispatch session.

@@ -251,4 +251,12 @@ describe('SA-调度会话子行', () => {
     expect(SA_DISPATCH_PROMPT).toMatch(/archiving a session fails.*keep the task completed/is);
     expect(SA_DISPATCH_PROMPT).toMatch(/Do not archive the dispatch session/i);
   });
+
+  it('提示词要求复用与共用会话保持原状态', () => {
+    expect(SA_DISPATCH_PROMPT).toMatch(/task_candidates keeps its current pin state/i);
+    expect(SA_DISPATCH_PROMPT).toMatch(/Do not pin or unpin it/i);
+    expect(SA_DISPATCH_PROMPT).toMatch(
+      /check message-task-status\.json again.*any unfinished task lists it/is,
+    );
+  });
 });

@@ -79,9 +79,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] 在 `src/sa-dispatch/prompt.ts` 的 `## Maintain the session list` 写入规则: 复用的候选会话保持原置顶状态；归档前读取 `message-task-status.json`，仍被未完成任务引用时保持未归档
-- [ ] T010 [US3] 在 `tests/sa-dispatch.test.ts` 增加断言: 复用不置顶、`message-task-status.json` 共用检查
-- [ ] T011 [US3] 运行 `pnpm test:code --reporter=minimal tests/sa-dispatch.test.ts` 验证 US3 断言通过
+- [X] T009 [US3] 在 `src/sa-dispatch/prompt.ts` 的 `## Maintain the session list` 写入规则: 复用的候选会话保持原置顶状态；归档前读取 `message-task-status.json`，仍被未完成任务引用时保持未归档
+- [X] T010 [US3] 在 `tests/sa-dispatch.test.ts` 增加断言: 复用不置顶、`message-task-status.json` 共用检查
+- [X] T011 [US3] 运行 `pnpm test:code --reporter=minimal tests/sa-dispatch.test.ts` 验证 US3 断言通过
 
 **Checkpoint**: 三个用户故事的规则在同一小节内完整，互不冲突。
 
