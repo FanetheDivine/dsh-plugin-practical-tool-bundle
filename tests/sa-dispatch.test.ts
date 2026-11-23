@@ -1,9 +1,11 @@
-// SA-调度会话子行测试：依赖注入、提示词、五个工具的参数转换与结果。
+// SA-调度会话子行测试：依赖注入、提示词、五个工具的参数转换与结果、用户状态提醒。
+import type { UserMessage } from '@deepseek-ai/dsh-llm';
 import { ToolArgsError, type ToolDefinition } from '@deepseek-ai/dsh-tools';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { LarkSuperAgentService } from '../src/lark-super-agent/api.ts';
 import { apply, name } from '../src/sa-dispatch/index.ts';
+import { presenceReminder } from '../src/sa-dispatch/presence.ts';
 import { SA_DISPATCH_PROMPT } from '../src/sa-dispatch/prompt.ts';
 import type { Context } from '../src/types.ts';
 import { makeCtx } from './helpers.ts';
@@ -61,6 +63,33 @@ function tool(tools: ToolDefinition[], toolName: string): ToolDefinition {
   const definition = tools.find((entry) => entry.name === toolName);
   if (definition === undefined) throw new Error(`missing tool ${toolName}`);
   return definition;
+}
+
+/** 构造一条带来源的用户消息。 */
+function sourcedMessage(kind: string, extra: Record<string, unknown> = {}): UserMessage {
+  return {
+    id: `msg-${Math.random().toString(36).slice(2)}`,
+    role: 'user',
+    content: [{ type: 'text', text: 'hello' }],
+    source: { kind, ...extra },
+  } as unknown as UserMessage;
+}
+
+/** 调用子行注册的 agent/pre-step 监听。 */
+async function runPreStep(
+  host: ReturnType<typeof mount>,
+  session: object,
+  messages: UserMessage[],
+  decision?: { kind: string; messages?: UserMessage[] },
+) {
+  const listener = host.base._onCallbacks.get('agent/pre-step')?.[0];
+  if (listener === undefined) throw new Error('missing agent/pre-step listener');
+  const next = vi.fn(async () => decision ?? { kind: 'enter', messages });
+  const result = (await listener({ agent: { session } }, next)) as {
+    kind: string;
+    messages?: UserMessage[];
+  };
+  return { result, next };
 }
 
 describe('SA-调度会话子行', () => {
@@ -258,5 +287,94 @@ describe('SA-调度会话子行', () => {
     expect(SA_DISPATCH_PROMPT).toMatch(
       /check message-task-status\.json again.*any unfinished task lists it/is,
     );
+  });
+
+  it('注册 agent/pre-step 用户状态提醒监听', () => {
+    const host = mount();
+    expect(host.base._onCallbacks.get('agent/pre-step')).toHaveLength(1);
+  });
+
+  it('首次本机消息插入 local 提醒，之后连续本机消息不重复', async () => {
+    const host = mount();
+    const session = {};
+    const local = sourcedMessage('user', { rpcId: 'rpc-1' });
+
+    const first = await runPreStep(host, session, [local]);
+
+    expect(first.result.kind).toBe('enter');
+    expect(first.result.messages).toHaveLength(2);
+    const [notice, original] = first.result.messages ?? [];
+    expect(notice?.source).toEqual({ kind: 'sa-dispatch-presence', form: 'notice' });
+    expect(JSON.stringify(notice?.content)).toContain('at the computer');
+    expect(JSON.stringify(notice?.content)).toContain('Do not call lark_notify');
+    expect(original).toBe(local);
+
+    const second = await runPreStep(host, session, [sourcedMessage('user')]);
+    expect(second.result.messages).toHaveLength(1);
+  });
+
+  it('飞书消息切回 remote 提醒，之后不重复', async () => {
+    const host = mount();
+    const session = {};
+    await runPreStep(host, session, [sourcedMessage('user')]);
+
+    const remote = await runPreStep(host, session, [sourcedMessage('lark-bridge')]);
+    expect(remote.result.messages).toHaveLength(2);
+    expect(JSON.stringify(remote.result.messages?.[0]?.content)).toContain('remote');
+    expect(JSON.stringify(remote.result.messages?.[0]?.content)).toContain('lark_notify');
+
+    const again = await runPreStep(host, session, [sourcedMessage('lark-bridge')]);
+    expect(again.result.messages).toHaveLength(1);
+  });
+
+  it('同批多条可判定消息以最后一条为准', () => {
+    expect(
+      presenceReminder([sourcedMessage('user'), sourcedMessage('lark-bridge')], undefined)
+        ?.presence,
+    ).toBe('remote');
+    expect(
+      presenceReminder([sourcedMessage('lark-bridge'), sourcedMessage('user')], undefined)
+        ?.presence,
+    ).toBe('local');
+    expect(presenceReminder([sourcedMessage('user')], 'local')).toBeUndefined();
+  });
+
+  it('桥接提醒、工作会话上报与其他注入不触发提醒', async () => {
+    const host = mount();
+    const session = {};
+    const messages = [
+      sourcedMessage('lark-bridge', { reminder: true }),
+      sourcedMessage('lark-super-agent'),
+      sourcedMessage('time-context'),
+      sourcedMessage('runtime-context'),
+    ];
+
+    const { result } = await runPreStep(host, session, messages);
+
+    expect(result.messages).toEqual(messages);
+    expect(presenceReminder(messages, undefined)).toBeUndefined();
+  });
+
+  it('reject 决策原样返回且不更新状态', async () => {
+    const host = mount();
+    const session = {};
+    const decision = { kind: 'reject' };
+
+    const rejected = await runPreStep(host, session, [sourcedMessage('user')], decision);
+    expect(rejected.result).toBe(decision);
+
+    const next = await runPreStep(host, session, [sourcedMessage('user')]);
+    expect(next.result.messages).toHaveLength(2);
+  });
+
+  it('提示词按状态提醒选择回复与转达渠道', () => {
+    expect(SA_DISPATCH_PROMPT).toContain('## Track where the user is');
+    expect(SA_DISPATCH_PROMPT).toMatch(/system reminder reports each presence change/i);
+    expect(SA_DISPATCH_PROMPT).toMatch(/treat the user as remote/i);
+    expect(SA_DISPATCH_PROMPT).toMatch(/at the computer.*response body/is);
+    expect(SA_DISPATCH_PROMPT).toMatch(/do not call lark_notify/i);
+    expect(SA_DISPATCH_PROMPT).toMatch(/Worker reports and failures never change/i);
+    expect(SA_DISPATCH_PROMPT).toMatch(/Dispatch every task in both states/i);
+    expect(SA_DISPATCH_PROMPT).toMatch(/channel for the current presence/i);
   });
 });

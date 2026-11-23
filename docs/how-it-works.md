@@ -154,6 +154,10 @@
 - meta-tools 是 `SA-调度会话` 的子行，十一项能力全部开启，`session_preset` 固定为 `sa-worker`。
 - 两个预设子行用 `ctx.systemPrompt.section` 注册各自会话的提示词。
 - `SA-调度会话` 的提示词要求每个任务都派给 worker 会话，自身只在调度工作区读写笔记、任务归档与报告；建任务前按 `workspaces.json` 的 `summary` 与 `keywords` 匹配工作区。
+- 两个预设子行都监听 `agent/pre-step` 区分用户消息与注入消息。调度会话按 `source.kind` 判定：`user` 为本机消息，`lark-bridge` 为飞书消息，状态切换时插入来源为 `sa-dispatch-presence` 的系统提醒。状态记录在以会话为键的 `WeakMap` 中。
+- `SA-调度会话` 的提示词按最近的系统提醒选择渠道：远程时经 `lark_notify` 回复与转达，用户在电脑前时在正文回复与转达。
+- `SA-任务会话` 把 `source.kind` 为 `dsh-plugin-meta-tools` 的消息包进 `<dispatch_session_message>`，保留原消息 id 与 `source`，文本中的闭标签转义。这覆盖 `session_create` 的首条任务与 `session_send` 的提醒。
+- `SA-任务会话` 的提示词按有无 `<dispatch_session_message>` 区分调度消息与本机消息：远程模式经 `send_report` 交流，本机模式正文直接对话；本机模式下需求变更、完成与放弃仍上报，`text` 首行写「用户在电脑前」。
 - `SA-调度会话` 的提示词要求新建工作会话后先置顶，再发送任务要求；复用的候选会话保持原置顶状态。
 - `SA-调度会话` 的提示词要求任务完成时先取得会话 id，标记完成后再逐个归档；仍被未完成任务引用的会话保持未归档，归档带 `stop_activity` 停止运行中的工作。
 - 两个预设都不含 `ask_user_question`，也不修改新会话的默认预设。
