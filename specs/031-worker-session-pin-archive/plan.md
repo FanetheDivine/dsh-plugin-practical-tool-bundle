@@ -53,7 +53,7 @@
 
 - **I. 宿主依赖版本**: 通过。不新增 `@deepseek-ai/*` 依赖；`dsh-plugin-meta-tools` 保持 0.1.7；宿主与依赖同为 0.2.2-rc.5。
 - **II. 测试同步**: 通过。`tests/sa-dispatch.test.ts` 增加提示词规则断言；`pnpm build` 重新生成产物并由 `test:dist` 校验。
-- **III. 文档结构**: 通过。用户可见行为写入 README 与行元数据，机制写入 `docs/how-it-works.md`，风险写入 `docs/known-risks.md`，变更写入 `changelogs/CHANGE.1.1.0.md`。
+- **III. 文档结构**: 通过。用户可见行为写入 README 与行元数据，机制写入 `docs/how-it-works.md`，风险写入 `docs/known-risks.md`，变更写入 `CHANGELOG.md`。
 - **IV. 质量门禁**: 通过。变更后运行 `pnpm format && pnpm check`；合并前通过 `pnpm check`。
 - **V. 公开引用**: 通过。新增内容只使用仓库内相对路径与公网 URL。
 
@@ -133,7 +133,7 @@ changelogs/CHANGE.1.1.0.md
 | `README.md` | 功能简介补一句；远程调度用法第 2、4 步写明置顶与归档 |
 | `docs/how-it-works.md` | 调度提示词规则增加置顶与归档两条 |
 | `docs/known-risks.md` | 在 lark-super-agent 下记录提示词遵循度风险 |
-| `changelogs/CHANGE.1.1.0.md` | 在 Unreleased 的 Changed 下记录提示词变化 |
+| `CHANGELOG.md` | 在 Unreleased 的 Changed 下记录提示词变化 |
 
 ## Verification
 
