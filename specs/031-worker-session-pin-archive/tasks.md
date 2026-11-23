@@ -47,9 +47,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] 在 `src/sa-dispatch/prompt.ts` 的 `## Maintain the session list` 写入规则: 新建会话先调用 `session_pin` 再发送任务要求；置顶失败告知用户并继续派发
-- [ ] T004 [US1] 在 `tests/sa-dispatch.test.ts` 增加断言: 小节标题、`session_pin`、置顶先于任务要求、置顶失败报告
-- [ ] T005 [US1] 运行 `pnpm test:code --reporter=minimal tests/sa-dispatch.test.ts` 验证 US1 断言通过
+- [X] T003 [US1] 在 `src/sa-dispatch/prompt.ts` 的 `## Maintain the session list` 写入规则: 新建会话先调用 `session_pin` 再发送任务要求；置顶失败告知用户并继续派发
+- [X] T004 [US1] 在 `tests/sa-dispatch.test.ts` 增加断言: 小节标题、`session_pin`、置顶先于任务要求、置顶失败报告
+- [X] T005 [US1] 运行 `pnpm test:code --reporter=minimal tests/sa-dispatch.test.ts` 验证 US1 断言通过
 
 **Checkpoint**: 新建会话置顶规则可在提示词与单元测试中独立验证。
 

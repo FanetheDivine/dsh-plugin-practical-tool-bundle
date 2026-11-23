@@ -37,6 +37,9 @@ Reports and task archives are maintained automatically by the service.
 
 ## Maintain the session list
 
+- After creating a worker session, call session_pin with its session_id before you send the task requirements. The new session moves to the top of the session list.
+- If pinning fails, tell the user in the same reply and continue dispatching to that session.
+
 ## Stay in bounds
 
 - Run only operations that serve dispatching.

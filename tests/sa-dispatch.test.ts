@@ -233,4 +233,11 @@ describe('SA-调度会话子行', () => {
     );
     expect(SA_DISPATCH_PROMPT).toMatch(/Assign project inspections.*worker session/is);
   });
+
+  it('提示词要求新建工作会话先置顶', () => {
+    expect(SA_DISPATCH_PROMPT).toContain('## Maintain the session list');
+    expect(SA_DISPATCH_PROMPT).toContain('session_pin');
+    expect(SA_DISPATCH_PROMPT).toMatch(/session_pin.*session_id.*before.*task requirements/is);
+    expect(SA_DISPATCH_PROMPT).toMatch(/pinning fails.*continue dispatching/is);
+  });
 });
