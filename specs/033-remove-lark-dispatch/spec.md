@@ -132,7 +132,7 @@ README、AGENTS.md 与 `docs/` 只描述六行功能与现存路由，数量表�
 ### Measurable Outcomes
 
 - **SC-001**: 全新 profile 安装后，loader 条目中该行与两个预设的数量为 0。
-- **SC-002**: 仓库全文检索 `lark`、`飞书`、`sa-dispatch`、`sa-worker` 时，除 `specs/`、`changelogs/` 与 `CHANGELOG.md` 的历史记录外命中数为 0。
+- **SC-002**: 仓库全文检索 `lark`、`飞书`、`sa-dispatch`、`sa-worker` 时，除 `specs/`、`changelogs/`、`CHANGELOG.md` 与本规格目录名外命中数为 0。
 - **SC-003**: `pnpm check` 与 `pnpm build` 通过，`dist` 中三个已删除入口的文件数为 0。
 - **SC-004**: `GET /status` 返回六项；`GET /lark-super-agent/status` 返回 404。
 

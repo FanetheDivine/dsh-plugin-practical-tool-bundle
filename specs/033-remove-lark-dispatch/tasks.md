@@ -22,14 +22,14 @@
 
 **Independent Test**: `pnpm typecheck && pnpm test:code` 通过；`cordis.patch.yml` 只声明根行与六个功能行。
 
-- [ ] T001 在 worktree 执行 `pnpm install --frozen-lockfile`，准备检查与构建环境
-- [ ] T002 [US1] 执行 `git revert --no-commit cc3c25d abc173b 3456418 f989513`，记录冲突文件清单
-- [ ] T003 [US1] 解 `cordis.patch.yml` 冲突：取撤销结果，核对 `insert` 只含根行与六个功能行
-- [ ] T004 [US4] 解 `docs/how-it-works.md` 冲突：删除本功能段落，保留 `eed7426` 的 `keepIds` 段落与 `4ac5848` 的启动重新施加载荷段落
-- [ ] T005 [US1] 删除撤销意图为删除的两个文件：`specs/025-remote-dispatch-session/contracts/presets.md`、`tests/presets-patch.test.ts`
-- [ ] T006 [US1] 核对撤销已覆盖 `src/rows.ts`、`src/row-status.ts`、`tsdown.config.ts`、`package.json`、`locale/` 与 `README.md` 中的功能内容
-- [ ] T007 [US2] 运行 `pnpm typecheck && pnpm test:code`，确认测试期望随撤销同步
-- [ ] T008 [US1] 提交「refactor: 撤销飞书任务与调度会话功能」
+- [X] T001 在 worktree 执行 `pnpm install --frozen-lockfile`，准备检查与构建环境
+- [X] T002 [US1] 执行 `git revert --no-commit cc3c25d abc173b 3456418 f989513`，记录冲突文件清单
+- [X] T003 [US1] 解 `cordis.patch.yml` 冲突：取撤销结果，核对 `insert` 只含根行与六个功能行
+- [X] T004 [US4] 解 `docs/how-it-works.md` 冲突：删除本功能段落，保留 `eed7426` 的 `keepIds` 段落与 `4ac5848` 的启动重新施加载荷段落
+- [X] T005 [US1] 删除撤销意图为删除的两个文件：`specs/025-remote-dispatch-session/contracts/presets.md`、`tests/presets-patch.test.ts`
+- [X] T006 [US1] 核对撤销已覆盖 `src/rows.ts`、`src/row-status.ts`、`tsdown.config.ts`、`package.json`、`locale/` 与 `README.md` 中的功能内容
+- [X] T007 [US2] 运行 `pnpm typecheck && pnpm test:code`，确认测试期望随撤销同步
+- [X] T008 [US1] 提交「refactor: 撤销飞书任务与调度会话功能」
 
 **Checkpoint**: 插件页只剩六行，测试通过。
 
@@ -41,9 +41,9 @@
 
 **Independent Test**: `specs/025`、`specs/031`、`specs/032` 与 `changelogs/` 文件数与基点一致；`CHANGELOG.md` 的 `Unreleased` 含一条 `Removed`。
 
-- [ ] T009 [US4] 执行 `git checkout cc3c25d -- specs/ changelogs/ CHANGELOG.md` 还原历史记录
-- [ ] T010 [US4] 在 `CHANGELOG.md` 的 `Unreleased` 增加 `### Removed`，写明删除该功能、两个预设与 `dsh-plugin-meta-tools` 依赖
-- [ ] T011 [US4] 提交「docs: 保留历史记录并记录功能删除」
+- [X] T009 [US4] 执行 `git checkout cc3c25d -- specs/ changelogs/ CHANGELOG.md` 还原历史记录
+- [X] T010 [US4] 在 `CHANGELOG.md` 的 `Unreleased` 增加 `### Removed`，写明删除该功能、两个预设与 `dsh-plugin-meta-tools` 依赖
+- [X] T011 [US4] 提交「docs: 保留历史记录并记录功能删除」
 
 **Checkpoint**: 历史记录完整，仓库只描述现有能力。
 
@@ -55,9 +55,9 @@
 
 **Independent Test**: `package.json`、`pnpm-workspace.yaml`、`pnpm-lock.yaml` 无该包命中；`pnpm install --frozen-lockfile` 通过。
 
-- [ ] T012 [US3] 删除 `package.json` 的 `dsh-plugin-meta-tools` 与 `pnpm-workspace.yaml` 的排除项，运行 `pnpm install`
-- [ ] T013 [US3] 核对 `pnpm-lock.yaml` 只删除该包相关条目，`yaml` 依赖保持
-- [ ] T014 [US3] 提交「chore: 移除 dsh-plugin-meta-tools 依赖」
+- [X] T012 [US3] 删除 `package.json` 的 `dsh-plugin-meta-tools` 与 `pnpm-workspace.yaml` 的排除项，运行 `pnpm install`
+- [X] T013 [US3] 核对 `pnpm-lock.yaml` 只删除该包相关条目，`yaml` 依赖保持
+- [X] T014 [US3] 提交「chore: 移除 dsh-plugin-meta-tools 依赖」
 
 **Checkpoint**: 安装不再引入该依赖。
 
@@ -69,10 +69,10 @@
 
 **Independent Test**: quickstart 的 Q-4 至 Q-6 命中符合预期。
 
-- [ ] T015 [US4] 全仓检索 `lark`、`飞书`、`sa-dispatch`、`sa-worker`、`meta-tools`，处理 `specs/`、`changelogs/`、`CHANGELOG.md` 之外的命中
-- [ ] T016 [US4] 核对 `README.md`、`AGENTS.md`、`docs/` 的行数与工具数表述为六，`docs/development.md` 不再指向已删除功能的验证指南
-- [ ] T017 [US4] 运行 `pnpm format`
-- [ ] T018 [US4] 提交「docs: 清理功能删除后的残留引用」
+- [X] T015 [US4] 全仓检索 `lark`、`飞书`、`sa-dispatch`、`sa-worker`、`meta-tools`，处理 `specs/`、`changelogs/`、`CHANGELOG.md` 之外的命中
+- [X] T016 [US4] 核对 `README.md`、`AGENTS.md`、`docs/` 的行数与工具数表述为六，`docs/development.md` 不再指向已删除功能的验证指南
+- [X] T017 [US4] 运行 `pnpm format`
+- [X] T018 [US4] 提交「docs: 清理功能删除后的残留引用」
 
 **Checkpoint**: 检索只剩历史记录命中。
 
@@ -84,10 +84,10 @@
 
 **Independent Test**: quickstart 的 Q-1 至 Q-12 全部符合预期。
 
-- [ ] T019 [US1] 运行 `pnpm check`
-- [ ] T020 [US1] 运行 `pnpm build`，核对 `dist` 不含三个已删除入口
-- [ ] T021 [US2] 用 `pnpm pack` 产物在隔离 profile 安装并重启宿主，按 `real-device-test` skill 核对六行、无预设与调度状态路由 404
-- [ ] T022 [US2] 把实机结果写入 PR 描述；仅在产生受跟踪改动时提交
+- [X] T019 [US1] 运行 `pnpm check`
+- [X] T020 [US1] 运行 `pnpm build`，核对 `dist` 不含三个已删除入口
+- [X] T021 [US2] 用 `pnpm pack` 产物在隔离 profile 安装并重启宿主，按 `real-device-test` skill 核对六行、无预设与调度状态路由 404
+- [X] T022 [US2] 把实机结果写入 PR 描述；仅在产生受跟踪改动时提交
 
 **Checkpoint**: 用户验收。
 
@@ -119,3 +119,5 @@
 - `dist/` 不跟踪，阶段 5 只重建不提交。
 - 冲突处理以 `research.md` 的 R-001 至 R-003 为准。
 - `pnpm install` 需要网络；失败时保留锁文件并在报告中说明。
+- 阶段 3 无独立改动：撤销已移除 `dsh-plugin-meta-tools` 的依赖、排除项与锁文件条目。
+- 阶段 5 扩展实机驱动：`run-test.mjs` 补 `official-features` 行与已删除行的断言，`browser-test.mjs` 补六行键集与 404 用例。
