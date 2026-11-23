@@ -37,10 +37,7 @@ export function apply(ctx: Context): void {
     dispatchCtx.on('agent/pre-step', async ({ agent }, next) => {
       const decision = await next();
       if (decision.kind === 'reject') return decision;
-      const reminder = presenceReminder(
-        decision.messages,
-        presenceBySession.get(agent.session),
-      );
+      const reminder = presenceReminder(decision.messages, presenceBySession.get(agent.session));
       if (reminder === undefined) return decision;
       presenceBySession.set(agent.session, reminder.presence);
       const notice = createUserMessage({

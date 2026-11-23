@@ -3,6 +3,14 @@ import type { ContentBlock, UserMessage } from '@deepseek-ai/dsh-llm';
 
 import { freezeMessage } from './host.ts';
 
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'dsh-plugin-meta-tools': {
+      kind: 'dsh-plugin-meta-tools';
+    };
+  }
+}
+
 /** meta-tools 投递消息的来源标识。 */
 const DISPATCH_SOURCE = 'dsh-plugin-meta-tools';
 

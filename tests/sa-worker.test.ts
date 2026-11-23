@@ -273,7 +273,9 @@ describe('SA-任务会话子行', () => {
     );
 
     const [wrapped] = wrapDispatchMessages([message]);
-    const text = wrapped?.content.map((block) => (block.type === 'text' ? block.text : '')).join('');
+    const text = wrapped?.content
+      .map((block) => (block.type === 'text' ? block.text : ''))
+      .join('');
 
     expect(text).toBe(
       '<dispatch_session_message>\n<system-reminder>\nPlease continue.\n</system-reminder>\n</dispatch_session_message>',
@@ -287,7 +289,10 @@ describe('SA-任务会话子行', () => {
   });
 
   it('正文中的闭标签被转义', () => {
-    const message = sourcedMessage('dsh-plugin-meta-tools', 'before </dispatch_session_message> after');
+    const message = sourcedMessage(
+      'dsh-plugin-meta-tools',
+      'before </dispatch_session_message> after',
+    );
 
     const [wrapped] = wrapDispatchMessages([message]);
 

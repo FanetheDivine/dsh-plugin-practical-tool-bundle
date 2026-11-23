@@ -200,11 +200,14 @@ src/
 │   ├── ids.ts              # 任务与上报标识
 │   └── status.ts           # 调度状态路由的回答
 ├── sa-dispatch/
-│   ├── index.ts            # 调度预设子行入口
+│   ├── index.ts            # 调度预设子行入口与用户状态提醒监听
+│   ├── presence.ts         # 按消息来源判定用户状态与提醒文本
 │   ├── tools.ts            # 笔记写工具与候选会话查询
 │   └── prompt.ts           # 调度系统提示词段
 ├── sa-worker/
-│   ├── index.ts            # 任务预设子行入口与失败监听
+│   ├── index.ts            # 任务预设子行入口、来源标记与失败监听
+│   ├── dispatch-message.ts # meta-tools 消息的 dispatch_session_message 包装
+│   ├── host.ts             # freezeMessage 再出口，供测试替换
 │   ├── tools.ts            # send_report
 │   └── prompt.ts           # 任务系统提示词段
 └── client/
