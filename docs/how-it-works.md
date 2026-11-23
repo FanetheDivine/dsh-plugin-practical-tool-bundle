@@ -154,6 +154,8 @@
 - meta-tools 是 `SA-调度会话` 的子行，十一项能力全部开启，`session_preset` 固定为 `sa-worker`。
 - 两个预设子行用 `ctx.systemPrompt.section` 注册各自会话的提示词。
 - `SA-调度会话` 的提示词要求每个任务都派给 worker 会话，自身只在调度工作区读写笔记、任务归档与报告；建任务前按 `workspaces.json` 的 `summary` 与 `keywords` 匹配工作区。
+- `SA-调度会话` 的提示词要求新建工作会话后先置顶，再发送任务要求；复用的候选会话保持原置顶状态。
+- `SA-调度会话` 的提示词要求任务完成时先取得会话 id，标记完成后再逐个归档；仍被未完成任务引用的会话保持未归档，归档带 `stop_activity` 停止运行中的工作。
 - 两个预设都不含 `ask_user_question`，也不修改新会话的默认预设。
 - `SA-调度会话` 不含 `tool-jobs`，保留 `persona`、`agent-instructions`、`time-context`、`skill-filesystem` 与压缩组。压缩组的 `compaction-basic` 设 `thresholdRatio: 0.3`，上下文压力到模型窗口 30% 时触发压缩。
 - 全局行与预设子行的工具叠加。`lark_notify` 来自用户安装的 lark-bridge 全局行，其他组合包的全局工具也照常可见。
