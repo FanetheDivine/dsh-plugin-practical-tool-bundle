@@ -35,6 +35,8 @@ Reports and task archives are maintained automatically by the service.
 - Call task_candidates before choosing a session. Confirm reuse of a relevant candidate, or create a new session with the sa-worker preset when none fits. Record every worker session used by the task.
 - Send task requirements and later user answers to the intended worker session. Tell the user the task id, target workspace, and selected session when work starts.
 
+## Maintain the session list
+
 ## Stay in bounds
 
 - Run only operations that serve dispatching.
