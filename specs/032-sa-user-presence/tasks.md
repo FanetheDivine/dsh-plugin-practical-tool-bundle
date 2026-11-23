@@ -39,12 +39,12 @@
 
 **Independent Test**: 单元测试覆盖 [contracts/dispatch-session-message.md](./contracts/dispatch-session-message.md) 验收断言 1–6 与提示词规则；实机执行 quickstart 场景 4–7。
 
-- [ ] T006 [US2] 新建 `src/sa-worker/host.ts` 再出口 `freezeMessage`，供测试替换
-- [ ] T007 [US2] 在 `src/sa-worker/dispatch-message.ts` 实现 `wrapDispatchMessages(messages)`：包装 `source.kind === 'dsh-plugin-meta-tools'` 的用户消息为 `<dispatch_session_message>`，开标签为首个文本块 `<dispatch_session_message>\n`、闭标签为末尾文本块 `\n</dispatch_session_message>`，文本中的 `</dispatch_session_message>` 转义为 `<\/dispatch_session_message>`，非文本块保留，保留原 `id` 与 `source`，已包装的消息跳过
-- [ ] T008 [US2] 在 `src/sa-worker/index.ts` 注册 `agent/pre-step`：先 `await next()`，`reject` 原样返回，否则用 `wrapDispatchMessages` 替换 `messages`，无需包装时返回原决策
-- [ ] T009 [US2] 按 [contracts/prompts.md](./contracts/prompts.md) 重写 `src/sa-worker/prompt.ts`：远程模式保持 `send_report` 交流；本机消息进入本机模式，正文直接对话，普通问答不上报；需求变更、完成与放弃仍 `send_report` 且 `text` 首行写 `用户在电脑前`；收到调度消息回到远程模式；不告知调度会话模式变化
-- [ ] T010 [US2] 在 `tests/sa-worker.test.ts` 增加包装契约验收断言 1–6、`agent/pre-step` 监听注册与两种模式提示词断言；原有「全部交流走 send_report」断言改为只在远程模式成立
-- [ ] T011 [US2] 运行 `pnpm vitest run tests/sa-worker.test.ts` 并提交本阶段
+- [x] T006 [US2] 新建 `src/sa-worker/host.ts` 再出口 `freezeMessage`，供测试替换
+- [x] T007 [US2] 在 `src/sa-worker/dispatch-message.ts` 实现 `wrapDispatchMessages(messages)`：包装 `source.kind === 'dsh-plugin-meta-tools'` 的用户消息为 `<dispatch_session_message>`，开标签为首个文本块 `<dispatch_session_message>\n`、闭标签为末尾文本块 `\n</dispatch_session_message>`，文本中的 `</dispatch_session_message>` 转义为 `<\/dispatch_session_message>`，非文本块保留，保留原 `id` 与 `source`，已包装的消息跳过
+- [x] T008 [US2] 在 `src/sa-worker/index.ts` 注册 `agent/pre-step`：先 `await next()`，`reject` 原样返回，否则用 `wrapDispatchMessages` 替换 `messages`，无需包装时返回原决策
+- [x] T009 [US2] 按 [contracts/prompts.md](./contracts/prompts.md) 重写 `src/sa-worker/prompt.ts`：远程模式保持 `send_report` 交流；本机消息进入本机模式，正文直接对话，普通问答不上报；需求变更、完成与放弃仍 `send_report` 且 `text` 首行写 `用户在电脑前`；收到调度消息回到远程模式；不告知调度会话模式变化
+- [x] T010 [US2] 在 `tests/sa-worker.test.ts` 增加包装契约验收断言 1–6、`agent/pre-step` 监听注册与两种模式提示词断言；原有「全部交流走 send_report」断言改为只在远程模式成立
+- [x] T011 [US2] 运行 `pnpm vitest run tests/sa-worker.test.ts` 并提交本阶段
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 

@@ -1,7 +1,8 @@
-/** SA-任务会话预设子行：注册上报工具、提示词与轮次失败监听。 */
+/** SA-任务会话预设子行：注册上报工具、提示词、调度消息来源标记与轮次失败监听。 */
 import type {} from '@deepseek-ai/dsh-session';
 
 import type { Context } from '../types.ts';
+import { wrapDispatchMessages } from './dispatch-message.ts';
 import { SA_WORKER_PROMPT } from './prompt.ts';
 import { registerWorkerTools, type WorkerContext } from './tools.ts';
 
@@ -36,6 +37,13 @@ export function apply(ctx: Context): void {
       text: SA_WORKER_PROMPT,
     });
     registerWorkerTools(workerCtx);
+    workerCtx.on('agent/pre-step', async (_payload, next) => {
+      const decision = await next();
+      if (decision.kind === 'reject') return decision;
+      const messages = wrapDispatchMessages(decision.messages);
+      if (messages === decision.messages) return decision;
+      return { ...decision, messages };
+    });
     workerCtx.on('session/event', (session, event) => {
       const failure = turnFailure(event);
       if (failure === undefined) return;
