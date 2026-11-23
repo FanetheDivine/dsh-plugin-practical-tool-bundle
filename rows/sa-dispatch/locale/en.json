@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "SA dispatch session",
-    "description": "Receive Lark messages, register workspaces, dispatch tasks, and coordinate worker sessions. Includes task and workspace notes, candidate session queries, and dispatch instructions."
+    "description": "Receive Lark messages, register workspaces, dispatch tasks, and coordinate worker sessions. Newly created worker sessions are pinned, and completed tasks' sessions are archived. Includes task and workspace notes, candidate session queries, and dispatch instructions."
   }
 }

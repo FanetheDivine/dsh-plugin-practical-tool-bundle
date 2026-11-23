@@ -91,13 +91,13 @@
 
 **Purpose**: 同步用户文档、机制文档、已知风险与变更日志，完成质量门禁。
 
-- [ ] T012 [P] 更新 `README.md`: 功能简介补一句置顶与归档；远程调度用法第 2、4 步写明置顶与归档
-- [ ] T013 [P] 更新 `rows/sa-dispatch/locale/zh.json` 与 `rows/sa-dispatch/locale/en.json` 的行简介
-- [ ] T014 [P] 更新 `docs/how-it-works.md` 的调度提示词规则，增加置顶与归档两条
-- [ ] T015 [P] 更新 `docs/known-risks.md` 的 lark-super-agent 段，记录提示词遵循度风险
-- [ ] T016 [P] 更新 `changelogs/CHANGE.1.1.0.md` 的 Unreleased Changed 列表
-- [ ] T017 按 `package.json` 的脚本运行 `pnpm format && pnpm check`
-- [ ] T018 运行 `pnpm build`，重新生成 `dist/sa-dispatch.mjs` 并通过产物测试
+- [X] T012 [P] 更新 `README.md`: 功能简介补一句置顶与归档；远程调度用法第 2、4 步写明置顶与归档
+- [X] T013 [P] 更新 `rows/sa-dispatch/locale/zh.json` 与 `rows/sa-dispatch/locale/en.json` 的行简介
+- [X] T014 [P] 更新 `docs/how-it-works.md` 的调度提示词规则，增加置顶与归档两条
+- [X] T015 [P] 更新 `docs/known-risks.md` 的 lark-super-agent 段，记录提示词遵循度风险
+- [X] T016 [P] 更新 `changelogs/CHANGE.1.1.0.md` 的 Unreleased Changed 列表
+- [X] T017 按 `package.json` 的脚本运行 `pnpm format && pnpm check`
+- [X] T018 运行 `pnpm build`，重新生成 `dist/sa-dispatch.mjs` 并通过产物测试
 
 **Checkpoint**: 质量门禁通过，用户文档、机制文档、风险与变更日志同步完成。
 
