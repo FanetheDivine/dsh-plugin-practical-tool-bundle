@@ -1,5 +1,5 @@
 /**
- * 行状态：从宿主 loader 的条目树上判断七个功能行是否可用。
+ * 行状态：从宿主 loader 的条目树上判断六个功能行是否可用。
  * 只读取条目的 `disabled` 与 fiber 状态，不修改 loader。
  */
 import { ROW_NAME_TO_ID, type RowName } from './rows.ts';
@@ -51,7 +51,6 @@ export function readRowStatus(loader: LoaderLike | undefined): RowStatus {
       restart: null,
       mobile: null,
       officialFeatures: null,
-      larkSuperAgent: null,
     };
   }
   const byId = new Map<string, LoaderEntryLike>();
@@ -74,6 +73,5 @@ export function readRowStatus(loader: LoaderLike | undefined): RowStatus {
     restart: at('restart'),
     mobile: at('mobile'),
     officialFeatures: at('officialFeatures'),
-    larkSuperAgent: at('larkSuperAgent'),
   };
 }

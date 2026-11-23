@@ -5,7 +5,7 @@
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "description": "七个可以单独开关的小工具：一键清理会话、推理报错自动重试、加载项目 Claude 技能、重启按钮、手机大按钮、官方功能开关，以及基于飞书的任务和调度会话。",
+  "description": "六个可以单独开关的小工具：一键清理会话、推理报错自动重试、加载项目 Claude 技能、重启按钮、手机大按钮、官方功能开关。",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/FanetheDivine/dsh-plugin-practical-tool-bundle.git"
@@ -25,9 +25,7 @@
     "restart",
     "claude-skills",
     "mobile",
-    "official-features",
-    "lark-super-agent",
-    "dispatch"
+    "official-features"
   ],
   "exports": {
     ".": {
@@ -75,25 +73,7 @@
       "default": "./dist/client.js"
     },
     "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg",
-    "./lark-super-agent": {
-      "types": "./dist/lark-super-agent.d.ts",
-      "import": "./dist/lark-super-agent.mjs"
-    },
-    "./lark-super-agent/locale/*.json": "./rows/lark-super-agent/locale/*.json",
-    "./lark-super-agent/icon": "./rows/lark-super-agent/icon.svg",
-    "./sa-dispatch": {
-      "types": "./dist/sa-dispatch.d.ts",
-      "import": "./dist/sa-dispatch.mjs"
-    },
-    "./sa-dispatch/locale/*.json": "./rows/sa-dispatch/locale/*.json",
-    "./sa-dispatch/icon": "./rows/sa-dispatch/icon.svg",
-    "./sa-worker": {
-      "types": "./dist/sa-worker.d.ts",
-      "import": "./dist/sa-worker.mjs"
-    },
-    "./sa-worker/locale/*.json": "./rows/sa-worker/locale/*.json",
-    "./sa-worker/icon": "./rows/sa-worker/icon.svg"
+    "./icon": "./icon.svg"
   },
   "files": [
     "dist",
@@ -137,8 +117,7 @@
     "format": "biome format --write ."
   },
   "dependencies": {
-    "yaml": "^2.9.1",
-    "dsh-plugin-meta-tools": "0.1.7"
+    "yaml": "^2.9.1"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.1.0",
@@ -146,7 +125,6 @@
     "@deepseek-ai/dsh-llm": "0.2.2-rc.5",
     "@deepseek-ai/dsh-session": "0.2.2-rc.5",
     "@deepseek-ai/dsh-skill": "0.2.2-rc.5",
-    "@deepseek-ai/dsh-tools": "0.2.2-rc.5",
     "@deepseek-ai/dsh-storage-domain": "0.2.2-rc.5",
     "zod": "4.6.6"
   },
@@ -179,7 +157,6 @@
     "typescript": "^6.0.3",
     "vitest": "^4.1.10",
     "yaml": "^2.9.1",
-    "@deepseek-ai/dsh-tools": "0.2.2-rc.5",
     "zod": "4.6.6"
   }
 }

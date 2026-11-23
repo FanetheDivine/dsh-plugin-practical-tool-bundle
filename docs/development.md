@@ -41,7 +41,7 @@
 
 | 构建组 | 入口 | 产物 |
 | --- | --- | --- |
-| 宿主 | `src/index.ts`、`src/sweeper/index.ts`、`src/reasoning-reset/index.ts`、`src/claude-skills/index.ts`、`src/restart/index.ts`、`src/mobile/index.ts`、`src/official-features/index.ts`、`src/lark-super-agent/index.ts`、`src/sa-dispatch/index.ts`、`src/sa-worker/index.ts` | `dist/<name>.mjs` |
+| 宿主 | `src/index.ts`、`src/sweeper/index.ts`、`src/reasoning-reset/index.ts`、`src/claude-skills/index.ts`、`src/restart/index.ts`、`src/mobile/index.ts`、`src/official-features/index.ts` | `dist/<name>.mjs` |
 | 浏览器 | `src/client/index.ts` | `dist/client.js` |
 
 - 宿主构建用对象形式的 `entry`，产物名与 `package.json` 的 `exports` 子路径一一对应。
@@ -98,12 +98,6 @@
 | `tests/reasoning-reset.test.ts` | 失败分类、去推理块、投影、每步一次 |
 | `tests/claude-skills.test.ts` | 项目根查找、frontmatter、技能过滤、provider 注册 |
 | `tests/mobile.test.ts` | 宽度替换、响应头、读取失败 |
-| `tests/official-features-*.test.ts` | 官方功能状态、运行期开关、存储、重组与路由 |
-| `tests/client-official-features.test.ts` | 官方功能面板、字典与切换交互 |
-| `tests/lark-super-agent-*.test.ts` | 桥接状态、笔记、git、上报、注入块、标识与调度状态路由 |
-| `tests/sa-dispatch.test.ts` | 调度工具注册、参数校验与提示词段 |
-| `tests/sa-worker.test.ts` | `send_report`、提示词段与失败监听 |
-| `tests/presets-patch.test.ts` | 两个预设的工具行、平台条件与非默认设置 |
 | `tests/client-sweeper.test.ts` | 扫帚槽位、悬停样式、面板文案 |
 | `tests/client-restart.test.ts` | 按钮槽位、确认流程、rail 样式 |
 | `tests/client-mobile.test.ts` | 本地 link 与远程 fetch 注入 |
@@ -124,7 +118,7 @@ vitest 拆成 `code` 与 `dist` 两个 project。产物测试读取 `dist`，由
 
 ## 实机验证
 
-按 [lark-super-agent 验证指南](../specs/025-remote-dispatch-session/quickstart.md) 执行 Q-1 至 Q-11。`real-device-test` skill 提供在真实宿主上安装、启用与清理隔离 profile 的流程。
+按 spec 的 `quickstart.md` 验证。`real-device-test` skill 提供在真实宿主上安装、启用与清理 profile 的流程。
 
 ## Spec Kit 流程
 
@@ -167,13 +161,13 @@ DSH 从 `.dsh/skills/` 加载 `speckit-*` skill，在对话框输入 `/` 调用�
 ## 文件地图
 
 ```text
-cordis.patch.yml            # 根行、七个功能行与两个预设声明
+cordis.patch.yml            # 根行与五个功能行
 assets/
 ├── launcher.cjs            # 重启用的 detached 启动器
 └── mobile.css              # 手机样式表
 icon.svg                    # 插件图标
 locale/                     # 插件元数据资源，规范见 i18n.md
-rows/<子路径>/              # 子路径行的元数据与图标，规范见 i18n.md
+rows/<子路径>/              # 功能行的元数据与图标，规范见 i18n.md
 src/
 ├── index.ts                # 根行：状态路由
 ├── rows.ts                 # 行 id 与路由常量
@@ -187,36 +181,12 @@ src/
 │   └── provider.ts         # 技能目录扫描与监听
 ├── restart/index.ts        # 重启路由
 ├── mobile/index.ts         # 手机样式表路由
-├── official-features/      # 官方功能状态、运行期开关、存储与路由
-├── lark-super-agent/
-│   ├── index.ts            # 全局行：共享服务与调度状态路由
-│   ├── api.ts              # 服务与数据结构
-│   ├── service.ts          # 调度会话解析、投递、笔记与 git 的组合
-│   ├── bridge.ts           # 读取 lark-bridge state.json
-│   ├── notes.ts            # 任务与工作区笔记、校验与归档
-│   ├── reports.ts          # 上报存档与附件复制
-│   ├── git.ts              # 串行 git 队列
-│   ├── blocks.ts           # 注入块与转义
-│   ├── ids.ts              # 任务与上报标识
-│   └── status.ts           # 调度状态路由的回答
-├── sa-dispatch/
-│   ├── index.ts            # 调度预设子行入口与用户状态提醒监听
-│   ├── presence.ts         # 按消息来源判定用户状态与提醒文本
-│   ├── tools.ts            # 笔记写工具与候选会话查询
-│   └── prompt.ts           # 调度系统提示词段
-├── sa-worker/
-│   ├── index.ts            # 任务预设子行入口、来源标记与失败监听
-│   ├── dispatch-message.ts # meta-tools 消息的 dispatch_session_message 包装
-│   ├── host.ts             # freezeMessage 再出口，供测试替换
-│   ├── tools.ts            # send_report
-│   └── prompt.ts           # 任务系统提示词段
 └── client/
     ├── index.ts            # 前端入口
     ├── locales.ts          # 中英文字典
     ├── status.ts           # 状态轮询与界面装卸
     ├── sweeper.tsx         # 扫帚按钮与面板
     ├── restart.tsx         # 重启按钮、对话框与遮罩
-    ├── official-features.tsx# 官方功能开关面板
     └── mobile.ts           # 手机样式表挂载
 dist/                       # 构建产物
 scripts/release-archive.mjs # 发布时归档 CHANGELOG
