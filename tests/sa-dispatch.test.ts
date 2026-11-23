@@ -240,4 +240,15 @@ describe('SA-调度会话子行', () => {
     expect(SA_DISPATCH_PROMPT).toMatch(/session_pin.*session_id.*before.*task requirements/is);
     expect(SA_DISPATCH_PROMPT).toMatch(/pinning fails.*continue dispatching/is);
   });
+
+  it('提示词要求任务完成后归档工作会话', () => {
+    expect(SA_DISPATCH_PROMPT).toContain('session_archive');
+    expect(SA_DISPATCH_PROMPT).toContain('stop_activity');
+    expect(SA_DISPATCH_PROMPT).toMatch(
+      /message-task-status\.json.*status: 'completed'.*session_archive/is,
+    );
+    expect(SA_DISPATCH_PROMPT).toMatch(/archiving removes the session's pin/i);
+    expect(SA_DISPATCH_PROMPT).toMatch(/archiving a session fails.*keep the task completed/is);
+    expect(SA_DISPATCH_PROMPT).toMatch(/Do not archive the dispatch session/i);
+  });
 });

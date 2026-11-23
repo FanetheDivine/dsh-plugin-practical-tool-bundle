@@ -63,9 +63,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] 在 `src/sa-dispatch/prompt.ts` 的 `## Maintain the session list` 写入规则: 先取得会话 id，再 `task_update` 完成，最后用 `session_archive` 带 `stop_activity: true` 逐个归档；归档失败在同一轮回复说明，任务保持完成，其余会话继续归档
-- [ ] T007 [US2] 在 `tests/sa-dispatch.test.ts` 增加断言: `session_archive`、`stop_activity`、先取 id 再完成再归档的顺序、归档失败报告
-- [ ] T008 [US2] 运行 `pnpm test:code --reporter=minimal tests/sa-dispatch.test.ts` 验证 US2 断言通过
+- [X] T006 [US2] 在 `src/sa-dispatch/prompt.ts` 的 `## Maintain the session list` 写入规则: 先取得会话 id，再 `task_update` 完成，最后用 `session_archive` 带 `stop_activity: true` 逐个归档；归档失败在同一轮回复说明，任务保持完成，其余会话继续归档
+- [X] T007 [US2] 在 `tests/sa-dispatch.test.ts` 增加断言: `session_archive`、`stop_activity`、先取 id 再完成再归档的顺序、归档失败报告
+- [X] T008 [US2] 运行 `pnpm test:code --reporter=minimal tests/sa-dispatch.test.ts` 验证 US2 断言通过
 
 **Checkpoint**: 任务完成归档规则可独立验证，且与置顶规则同时成立。
 
