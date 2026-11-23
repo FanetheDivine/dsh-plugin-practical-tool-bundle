@@ -24,6 +24,7 @@
 - [D-006] Q: 采用哪种删除方式？ -> A: 撤销功能提交，再把 `specs/`、`changelogs/` 与 `CHANGELOG.md` 还原到删除前状态，最后按残留检索校对。
 - [D-007] Q: 未合并的 `worktrees/030-lark-dispatch-config` 如何处理？ -> A: 本规格不涉及，用户自行处理。
 - [D-008] Q: `CHANGELOG.md` 的 `Unreleased` 段落如何处理？ -> A: 保持已有记录，并追加一条 `Removed` 条目说明删除功能。（P-001 修订）
+- [D-009] Q: 宿主入口数量？ -> A: 七个，即根行加六个功能行。原文「六个宿主入口」按此更正。
 
 ## Review Record
 
@@ -88,7 +89,7 @@ README、AGENTS.md 与 `docs/` 只描述六行功能与现存路由，数量表�
 **Acceptance Scenarios**:
 
 1. **Given** 新版本，**When** 检索该功能的标识与「七个」，**Then** 除保留的历史记录外无命中。
-2. **Given** 同上，**When** 运行 `pnpm check` 与 `pnpm build`，**Then** 全部通过，`dist` 只含六个宿主入口与 `client.js`。
+2. **Given** 同上，**When** 运行 `pnpm check` 与 `pnpm build`，**Then** 全部通过，`dist` 只含七个宿主入口与 `client.js`。
 
 ### Edge Cases
 
@@ -105,7 +106,7 @@ README、AGENTS.md 与 `docs/` 只描述六行功能与现存路由，数量表�
 - **FR-001**: `cordis.patch.yml` MUST NOT 声明 `lark-super-agent` 行、`sa-dispatch` 与 `sa-worker` 子行、`preset-sa-dispatch` 与 `preset-sa-worker` 预设行，以及 `SA-调度会话` 内的 `meta-tools` 子行。
 - **FR-002**: 聚合状态路由 MUST 只报告六行功能，回答中不含 `larkSuperAgent` 键。
 - **FR-003**: 本包 MUST NOT 注册 `GET /api/dsh-practical-tools/lark-super-agent/status`。
-- **FR-004**: 构建 MUST 产出六个宿主入口与 `client.js`，不含三个已删除入口。
+- **FR-004**: 构建 MUST 产出七个宿主入口与 `client.js`，不含三个已删除入口。
 - **FR-005**: `package.json` MUST 只描述现存能力：`exports`、`keywords`、`description`、`files` 与该功能无关，`dependencies` 不含 `dsh-plugin-meta-tools`，`pnpm-workspace.yaml` 与 `pnpm-lock.yaml` 同步。
 - **FR-006**: 该功能的宿主源码、行目录、图标、行本地化与测试文件 MUST 从仓库删除。
 - **FR-007**: `README.md`、`AGENTS.md` 与 `docs/` MUST 只描述六行功能、现存路由与现存配置；行数与工具数表述为六。

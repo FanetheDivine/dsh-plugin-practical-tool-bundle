@@ -98,6 +98,8 @@
 | `tests/reasoning-reset.test.ts` | 失败分类、去推理块、投影、每步一次 |
 | `tests/claude-skills.test.ts` | 项目根查找、frontmatter、技能过滤、provider 注册 |
 | `tests/mobile.test.ts` | 宽度替换、响应头、读取失败 |
+| `tests/official-features-*.test.ts` | 官方功能状态、运行期开关、存储、重组与路由 |
+| `tests/client-official-features.test.ts` | 官方功能面板、字典与切换交互 |
 | `tests/client-sweeper.test.ts` | 扫帚槽位、悬停样式、面板文案 |
 | `tests/client-restart.test.ts` | 按钮槽位、确认流程、rail 样式 |
 | `tests/client-mobile.test.ts` | 本地 link 与远程 fetch 注入 |
@@ -161,7 +163,7 @@ DSH 从 `.dsh/skills/` 加载 `speckit-*` skill，在对话框输入 `/` 调用�
 ## 文件地图
 
 ```text
-cordis.patch.yml            # 根行与五个功能行
+cordis.patch.yml            # 根行与六个功能行
 assets/
 ├── launcher.cjs            # 重启用的 detached 启动器
 └── mobile.css              # 手机样式表
@@ -181,6 +183,7 @@ src/
 │   └── provider.ts         # 技能目录扫描与监听
 ├── restart/index.ts        # 重启路由
 ├── mobile/index.ts         # 手机样式表路由
+├── official-features/      # 官方功能状态、运行期开关、存储与路由
 └── client/
     ├── index.ts            # 前端入口
     ├── locales.ts          # 中英文字典
