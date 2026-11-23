@@ -49,13 +49,13 @@
 ## Phase 5: Polish & Cross-Cutting Concerns
 
 - [x] T012 [P] 更新 `rows/sa-dispatch/locale/zh.json` 与 `rows/sa-dispatch/locale/en.json`：简介加入本机消息改为正文回复
-- [x] T012 [P] 更新 `rows/sa-worker/locale/zh.json` 与 `rows/sa-worker/locale/en.json`：简介加入调度消息标记与本机直接对话
-- [x] T012 更新 `README.md`：功能简介补一句，远程调度用法补本机介入说明
-- [x] T012 更新 `docs/how-it-works.md`：调度服务与预设叠加一节写两种状态规则、`<dispatch_session_message>` 包装与状态提醒；`docs/development.md` 文件地图补新增模块
-- [x] T012 更新 `docs/known-risks.md`：模型忽略提醒、GUI 显示标记、其他插件以 `user` 来源注入、宿主升级改变来源标识或 `agent/pre-step`
-- [x] T012 更新 `CHANGELOG.md` 的 Unreleased：记录两项提示词变化、调度状态提醒与工作会话来源标记
-- [x] T012 运行 `pnpm format && pnpm check` 与 `pnpm build`，确认 `dist/sa-dispatch.mjs`、`dist/sa-worker.mjs` 包含新逻辑并提交本阶段
-- [ ] T019 用 `real-device-test` 按 `specs/032-sa-user-presence/quickstart.md` 场景 1–8 实机验证，记录结果
+- [x] T013 [P] 更新 `rows/sa-worker/locale/zh.json` 与 `rows/sa-worker/locale/en.json`：简介加入调度消息标记与本机直接对话
+- [x] T014 更新 `README.md`：功能简介补一句，远程调度用法补本机介入说明
+- [x] T015 更新 `docs/how-it-works.md`：调度服务与预设叠加一节写两种状态规则、`<dispatch_session_message>` 包装与状态提醒；`docs/development.md` 文件地图补新增模块
+- [x] T016 更新 `docs/known-risks.md`：模型忽略提醒、GUI 显示标记、其他插件以 `user` 来源注入、宿主升级改变来源标识或 `agent/pre-step`
+- [x] T017 更新 `CHANGELOG.md` 的 Unreleased：记录两项提示词变化、调度状态提醒与工作会话来源标记
+- [x] T018 运行 `pnpm format && pnpm check` 与 `pnpm build`，确认 `dist/sa-dispatch.mjs`、`dist/sa-worker.mjs` 包含新逻辑并提交本阶段
+- [x] T019 用 `real-device-test` 按 `specs/032-sa-user-presence/quickstart.md` 场景 1–8 实机验证，记录结果
 
 ## Dependencies
 
