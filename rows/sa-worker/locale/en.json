@@ -1,6 +1,0 @@
-{
-  "meta": {
-    "title": "SA worker session",
-    "description": "Execute tasks assigned by the dispatch session, report progress, questions, and results with send_report, and notify the dispatch session when a task fails. Dispatch messages carry a source marker; direct user messages are answered in the response body."
-  }
-}

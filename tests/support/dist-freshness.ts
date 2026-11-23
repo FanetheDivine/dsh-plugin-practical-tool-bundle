@@ -19,9 +19,6 @@ const BUILD_PRODUCTS = [
   'dist/client.js',
   'dist/index.mjs',
   'dist/index.d.ts',
-  'dist/lark-super-agent.mjs',
-  'dist/sa-dispatch.mjs',
-  'dist/sa-worker.mjs',
   'dist/client/index.d.ts',
 ] as const;
 

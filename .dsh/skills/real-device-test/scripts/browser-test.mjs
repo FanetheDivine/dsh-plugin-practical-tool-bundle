@@ -110,13 +110,25 @@ try {
   const dismissed = await dismissWelcome(page);
   console.log('GUI 已加载', JSON.stringify({ welcome: dismissed }));
 
-  await check('A3 状态路由报告五行可用', async () => {
+  await check('A3 状态路由报告六行可用', async () => {
     const answer = await api('/api/dsh-practical-tools/status');
     assert.equal(answer.status, 200, `状态路由返回 HTTP ${answer.status}`);
     const rows = answer.body?.rows ?? {};
     assert.equal(rows.sweeper, true, `rows.sweeper 为 ${JSON.stringify(rows.sweeper)}`);
-    for (const key of ['sweeper', 'reasoningReset', 'claudeSkills', 'restart', 'mobile'])
-      assert.equal(typeof rows[key], 'boolean', `rows.${key} 应为布尔值`);
+    const KEYS = [
+      'sweeper',
+      'reasoningReset',
+      'claudeSkills',
+      'restart',
+      'mobile',
+      'officialFeatures',
+    ];
+    for (const key of KEYS) assert.equal(typeof rows[key], 'boolean', `rows.${key} 应为布尔值`);
+    assert.deepEqual(
+      Object.keys(rows).sort(),
+      [...KEYS].sort(),
+      `状态路由键集不符：${JSON.stringify(Object.keys(rows))}`,
+    );
     return { rows };
   });
 
@@ -260,6 +272,12 @@ try {
     assert(answer.text.includes('328px'), '样式表缺少 328px 抽屉宽度');
     assert(answer.text.includes('max-width: 767px'), '样式表缺少手机断点');
     return { bytes: answer.text.length };
+  });
+
+  await check('B5 已删除的调度状态路由返回 404', async () => {
+    const answer = await api('/api/dsh-practical-tools/lark-super-agent/status');
+    assert.equal(answer.status, 404, `调度状态路由返回 HTTP ${answer.status}`);
+    return { status: answer.status };
   });
 } catch (e) {
   console.error(e);

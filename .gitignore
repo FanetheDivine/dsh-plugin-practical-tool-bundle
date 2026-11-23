@@ -6,6 +6,7 @@ dist/
 .env.*
 coverage/
 results.json
+browser-results.json
 shots/
 .rdt-pinned
 *.zip

@@ -24,9 +24,6 @@ export const MOBILE_CSS_PATH = `${API_BASE}/mobile.css`;
 /** 官方功能管理路由：读取五个功能状态，或切换其中一个。 */
 export const OFFICIAL_FEATURES_PATH = `${API_BASE}/official-features`;
 
-/** 调度行状态路由。 */
-export const SUPER_AGENT_STATUS_PATH = `${API_BASE}/lark-super-agent/status`;
-
 /** profile 中各行的 id，与 cordis.patch.yml 一致。 */
 export const ROW_IDS = {
   root: PLUGIN_NAME,
@@ -36,7 +33,6 @@ export const ROW_IDS = {
   restart: 'restart-button',
   mobile: 'mobile-touch-ui',
   officialFeatures: 'official-features',
-  larkSuperAgent: 'lark-super-agent',
 } as const;
 
 /** 状态路由回答中使用的行名。 */
@@ -46,8 +42,7 @@ export type RowName =
   | 'claudeSkills'
   | 'restart'
   | 'mobile'
-  | 'officialFeatures'
-  | 'larkSuperAgent';
+  | 'officialFeatures';
 
 /** 行名到 profile 行 id 的映射。 */
 export const ROW_NAME_TO_ID: Readonly<Record<RowName, string>> = {
@@ -57,5 +52,4 @@ export const ROW_NAME_TO_ID: Readonly<Record<RowName, string>> = {
   restart: ROW_IDS.restart,
   mobile: ROW_IDS.mobile,
   officialFeatures: ROW_IDS.officialFeatures,
-  larkSuperAgent: ROW_IDS.larkSuperAgent,
 };

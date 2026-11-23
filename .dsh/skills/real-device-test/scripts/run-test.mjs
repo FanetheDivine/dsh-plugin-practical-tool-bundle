@@ -1,4 +1,4 @@
-// 实机测试后端驱动：启动 profile，校验插件五行在 loader 中启用。
+// 实机测试后端驱动：启动 profile，校验插件六行在 loader 中启用，已删除的行不在 loader。
 // 用法：在 profile 目录运行 node run-test.mjs；RDT_KEEPALIVE=1 时结束后保留运行时。
 // env：RDT_REPO 必填；RDT_PROFILE_DIR 默认脚本所在目录；RDT_PROFILE 默认目录名；RDT_DSH_PKG 默认全局宿主。
 // 结果写入 results.json，全部通过时退出码为 0。
@@ -56,7 +56,7 @@ const results = [];
 /** cordis fiber 状态：2 为已激活，3 为 apply 抛错。 */
 const FIBER_ACTIVE = 2;
 
-/** 根行与五行：loader 行 id 与入口模块名。 */
+/** 根行与六行：loader 行 id 与入口模块名。 */
 const ROWS = [
   { key: 'root', id: PLUGIN, name: PLUGIN },
   { key: 'sweeper', id: 'session-sweeper', name: `${PLUGIN}/sweeper` },
@@ -64,7 +64,11 @@ const ROWS = [
   { key: 'claudeSkills', id: 'claude-skills', name: `${PLUGIN}/claude-skills` },
   { key: 'restart', id: 'restart-button', name: `${PLUGIN}/restart` },
   { key: 'mobile', id: 'mobile-touch-ui', name: `${PLUGIN}/mobile` },
+  { key: 'officialFeatures', id: 'official-features', name: `${PLUGIN}/official-features` },
 ];
+
+/** 已删除的行：loader 中不得出现。 */
+const REMOVED_ROWS = ['lark-super-agent', 'sa-dispatch', 'sa-worker'];
 
 /** 运行一条用例并记录结果。 */
 async function check(label, fn) {
@@ -85,7 +89,7 @@ try {
     return entries.find((e) => e.id === id) ?? entries.find((e) => e.id.endsWith(`:${id}`));
   };
 
-  await check('A1 根行与五行在 loader 中启用', async () => {
+  await check('A1 根行与六行在 loader 中启用', async () => {
     const active = {};
     for (const row of ROWS) {
       const entry = findEntry(row.id);
@@ -111,6 +115,13 @@ try {
     const sha = hash(join(installed, 'dist', 'index.mjs'));
     assert.equal(sha, hash(join(REPO, 'dist', 'index.mjs')), '加载产物与仓库 dist 不一致');
     return { version: version(installed), sha };
+  });
+
+  await check('A3 已删除的行不在 loader', async () => {
+    const ids = [...app.loader.entries()].map((e) => e.id);
+    const found = ids.filter((id) => REMOVED_ROWS.some((r) => id === r || id.endsWith(`:${r}`)));
+    assert.deepEqual(found, [], `loader 中仍有已删除的行：${found.join(', ')}`);
+    return { entries: ids.length };
   });
 
   /** 状态路由的验证命令；在已启动的 GUI 中由 browser-test.mjs 执行。 */
