@@ -1,6 +1,7 @@
 // 标准模式叠加行测试：变换、幂等、恢复、重载与缺失依赖。
 import { describe, expect, it } from 'vitest';
 
+import { applyPresetRows, createSnapshot } from '../src/official-features/apply.ts';
 import {
   apply,
   BEHAVIOR_ID,
@@ -197,5 +198,35 @@ describe('standard-codex 行', () => {
     Object.assign(ctx as unknown as Record<string, unknown>, { get: () => undefined });
     apply(ctx);
     expect(ctx._loggerCalls.some((call) => call.level === 'warn')).toBe(true);
+  });
+});
+
+describe('与 official-features 共存', () => {
+  it('功能重算后保留空 persona 前缀与行为子行', async () => {
+    const rows = [
+      persona(),
+      { id: 'tool-fs', name: '@deepseek-ai/dsh-tool-fs' },
+      {
+        id: 'planning',
+        name: 'cordis:group',
+        group: true,
+        config: [{ id: 'plan-mode', name: '@deepseek-ai/dsh-plan-mode' }],
+      },
+    ];
+    const original = standardEntry(rows);
+    const { ctx, loader } = withLoader([original]);
+    apply(ctx);
+    await flush();
+
+    // 模拟官方功能开关重算：关闭 plan
+    const snapshot = createSnapshot();
+    await applyPresetRows(loader, ['plan'], snapshot);
+    const config = loader.entry('include:preset-standard')?.options?.config as {
+      plugins: Array<{ id?: string; config?: { prefix?: string } }>;
+    };
+    const ids = config.plugins.map((row) => row.id);
+    expect(ids).toContain(BEHAVIOR_ID);
+    expect(ids).not.toContain('planning');
+    expect(config.plugins[0]?.config?.prefix).toBe('');
   });
 });

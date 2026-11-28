@@ -134,8 +134,9 @@ export function apply(ctx: Context): void {
 
   ctx.effect(() => {
     void applyOnce();
-    return async () => {
-      await restore();
+    // 清理阶段只发起恢复：在清理里等待 loader.update 会与停用该行的更新互相等待。
+    return () => {
+      void restore();
     };
   }, 'standard-codex overlay');
 
