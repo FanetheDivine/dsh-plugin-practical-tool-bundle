@@ -24,3 +24,6 @@
     # 官方功能开关：面板、功能状态路由，与在运行期开关官方行和 preset 子行。
     - id: official-features
       name: dsh-plugin-practical-tool-bundle/official-features
+    # 标准模式增强：运行期给官方 standard 预设追加 Codex 行为提示词，并清空含模型名的身份句。
+    - id: standard-codex
+      name: dsh-plugin-practical-tool-bundle/standard-codex

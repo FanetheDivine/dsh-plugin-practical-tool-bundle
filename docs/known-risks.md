@@ -32,6 +32,14 @@ pnpm 的 minimum release age 策略会拒绝发布时间过短的包。
 - preset 变化只影响之后新建的会话；已存在的会话保持它启动时的组合。
 - 关闭功能不删除数据：已排定的任务在重新开启后继续，`goal` 记录保留。
 
+## 标准模式叠加
+
+- 叠加依赖 `loader.update` 改写 `preset-standard` 的 `config`，与官方功能管理共用同一内部契约。
+- 改写只在内存中生效；配置重组后文件状态覆盖，本包订阅事件重新施加。
+- 用户在 Web 编辑器改过标准模式后，下一次重组前可能看到未叠加的提示词。
+- `official-features` 的重算逻辑变化时，需要核对空 persona 前缀与 `codex-behavior` 子行是否仍被保留。
+- 停用本行时按首次施加前的快照恢复，恢复可能覆盖期间由其它行产生的改动。
+
 ## 共享宿主实例
 
 - 插件运行时使用宿主提供的 cordis、dsh-session、dsh-llm 与 dsh-skill。

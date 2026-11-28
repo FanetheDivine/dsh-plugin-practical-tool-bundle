@@ -13,9 +13,22 @@
 | `dist/restart.mjs` | `restart-button` | 重启路由 |
 | `dist/mobile.mjs` | `mobile-touch-ui` | 手机样式表路由 |
 | `dist/official-features.mjs` | `official-features` | 官方功能状态路由与运行期开关 |
+| `dist/standard-codex.mjs` | `standard-codex` | 运行期给标准预设追加行为子行并清空 persona 前缀 |
+| `dist/codex-behavior.mjs` | `codex-behavior`（预设子行） | 注册响应性、进度更新、止损收敛三段提示词 |
 | `dist/client.js` | 随根行 | 浏览器半部：四块界面与状态轮询 |
 
 `assets/launcher.cjs` 由重启行以 detached 进程启动，`assets/mobile.css` 由手机样式行读取。两者用 `new URL('../assets/...', import.meta.url)` 定位，因此必须随包发布。
+
+## 标准模式增强
+
+`standard-codex` 行在启动、配置重组与启动完成后找到 `config.id` 为 `standard` 的 preset 声明，在内存里把 persona 子行的 `config.prefix` 设为空串，并在 `plugins` 末尾追加 `codex-behavior` 子行。官方 `standard.patch.yml` 与行 id 都不改动。
+
+- 子行注册三段提示词：`codex:responsiveness` 段序 100、`codex:progress-updates` 110、`codex:stop-loss` 120。
+- 三段位于 persona 之后、`PLAN_POLICY`（500）与工具规则（900 起）之前。
+- 变换幂等：目标状态已满足时不写回。
+- `app-boot/config-reload` 后重新施加；行停用时按首次施加前的配置恢复。
+- `official-features` 重算时用当前子行覆盖基线同名子行并追加基线外子行，因此保留空 persona 前缀与 `codex-behavior` 子行。
+- 运行期改动不落盘，重启后回到文件状态再施加一次。
 
 ## 行与路由
 

@@ -95,6 +95,9 @@ const ROW_SUBPATHS = [
   'official-features',
 ];
 
+/** 只有宿主行为、没有 rows/ 元数据的行子路径。 */
+const NON_UI_SUBPATHS = ['standard-codex'];
+
 /** 宿主接受的图标大小上限。 */
 const ICON_MAX_BYTES = 256 * 1024;
 
@@ -113,7 +116,7 @@ describe('功能行元数据资源', () => {
     const names = [...patch.matchAll(/name: dsh-plugin-practical-tool-bundle\/(\S+)/g)].map(
       (match) => match[1],
     );
-    expect(names.sort()).toEqual([...ROW_SUBPATHS].sort());
+    expect(names.sort()).toEqual([...ROW_SUBPATHS, ...NON_UI_SUBPATHS].sort());
   });
 
   it.each(ROW_SUBPATHS)('%s 的每种基线语言含单行标题与非空描述', (subpath) => {

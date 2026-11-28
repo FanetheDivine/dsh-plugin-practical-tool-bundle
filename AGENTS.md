@@ -1,6 +1,6 @@
 # 项目说明
 
-DSH 插件 `dsh-plugin-practical-tool-bundle`（中文标题「DSH实用工具组合包」）。一个包内的六行：一键清理会话、推理报错自动重试、加载项目 Claude 技能、重启按钮、手机大按钮、官方功能开关。
+DSH 插件 `dsh-plugin-practical-tool-bundle`（中文标题「DSH实用工具组合包」）。一个包内的六行：一键清理会话、推理报错自动重试、加载项目 Claude 技能、重启按钮、手机大按钮、官方功能开关；并为官方标准模式追加 Codex 行为提示词（行 `standard-codex`）。
 
 - 常用 pnpm 脚本：`dev`、`build`、`check`、`full-check`、`release`、`test:code`、`test:dist`、`lint`、`lint:fix`、`format`。
 - 命令说明见 [development.md](./docs/development.md#命令)。

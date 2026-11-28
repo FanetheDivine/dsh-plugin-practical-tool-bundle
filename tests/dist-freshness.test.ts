@@ -14,6 +14,10 @@ const PRODUCT_FILES = [
   'dist/client.js',
   'dist/index.mjs',
   'dist/index.d.ts',
+  'dist/codex-behavior.mjs',
+  'dist/codex-behavior/index.d.ts',
+  'dist/standard-codex.mjs',
+  'dist/standard-codex/index.d.ts',
   'dist/client/index.d.ts',
 ];
 

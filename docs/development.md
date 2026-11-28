@@ -41,7 +41,7 @@
 
 | 构建组 | 入口 | 产物 |
 | --- | --- | --- |
-| 宿主 | `src/index.ts`、`src/sweeper/index.ts`、`src/reasoning-reset/index.ts`、`src/claude-skills/index.ts`、`src/restart/index.ts`、`src/mobile/index.ts`、`src/official-features/index.ts` | `dist/<name>.mjs` |
+| 宿主 | `src/index.ts`、`src/sweeper/index.ts`、`src/reasoning-reset/index.ts`、`src/claude-skills/index.ts`、`src/restart/index.ts`、`src/mobile/index.ts`、`src/official-features/index.ts`、`src/codex-behavior/index.ts`、`src/standard-codex/index.ts` | `dist/<name>.mjs` |
 | 浏览器 | `src/client/index.ts` | `dist/client.js` |
 
 - 宿主构建用对象形式的 `entry`，产物名与 `package.json` 的 `exports` 子路径一一对应。
@@ -163,7 +163,7 @@ DSH 从 `.dsh/skills/` 加载 `speckit-*` skill，在对话框输入 `/` 调用�
 ## 文件地图
 
 ```text
-cordis.patch.yml            # 根行与六个功能行
+cordis.patch.yml            # 根行、六个功能行与标准模式叠加行
 assets/
 ├── launcher.cjs            # 重启用的 detached 启动器
 └── mobile.css              # 手机样式表

@@ -1,5 +1,5 @@
 // 包内容回归测试：npm pack --dry-run 断言 tarball 只含发布所需文件。
-// 七个宿主入口、前端产物、assets、图标、locale 与 rows 行资源必须进包；src / tests / scripts 不得进包。
+// 九个宿主入口、前端产物、assets、图标、locale 与 rows 行资源必须进包；src / tests / scripts 不得进包。
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -21,6 +21,8 @@ const REQUIRED = [
   'dist/restart.mjs',
   'dist/mobile.mjs',
   'dist/official-features.mjs',
+  'dist/codex-behavior.mjs',
+  'dist/standard-codex.mjs',
   'dist/client.js',
   'assets/launcher.cjs',
   'assets/mobile.css',
