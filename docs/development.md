@@ -163,7 +163,7 @@ DSH 从 `.dsh/skills/` 加载 `speckit-*` skill，在对话框输入 `/` 调用�
 ## 文件地图
 
 ```text
-cordis.patch.yml            # 根行、六个功能行与标准模式叠加行
+cordis.patch.yml            # 根行、功能行与标准模式叠加行
 assets/
 ├── launcher.cjs            # 重启用的 detached 启动器
 └── mobile.css              # 手机样式表

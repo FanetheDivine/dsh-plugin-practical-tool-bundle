@@ -2,7 +2,7 @@
 
 ## 包结构
 
-一个 npm 包承载六行。宿主按 `cordis.patch.yml` 的 `name` 分别 import 各入口。
+一个 npm 包承载七个宿主行与一个预设子行。宿主按 `cordis.patch.yml` 的 `name` 分别 import 各入口。
 
 | 入口 | 行 id | 作用 |
 | --- | --- | --- |
@@ -36,7 +36,7 @@
 
 | 路由 | 行 | 说明 |
 | --- | --- | --- |
-| `GET /status` | 根行 | 六行是否可用 |
+| `GET /status` | 根行 | 各功能行是否可用 |
 | `POST /sweep` | `session-sweeper` | 归档未置顶会话并删除已归档日志 |
 | `GET /restart/info` | `restart-button` | 当前进程标识与运行形态 |
 | `POST /restart` | `restart-button` | 重启服务或应用 |
